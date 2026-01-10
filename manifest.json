@@ -1,0 +1,10 @@
+{
+	"id": "special-callouts",
+	"name": "Special Callouts",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Advanced callout styling with grid layouts, custom colors, gradients, glow effects, and multi-column support.",
+	"author": "ahseyg81",
+	"authorUrl": "https://github.com/ahseyg81",
+	"isDesktopOnly": false
+}

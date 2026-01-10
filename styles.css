@@ -1,0 +1,64 @@
+/* Special Callouts - Core Styles */
+
+.callout[data-callout="multi-callout"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.callout[data-callout="multi-callout"]>.callout-title {
+    display: none !important;
+}
+
+.callout[data-callout="multi-callout"]>.callout-content {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+}
+
+.callout[data-callout="multi-callout"]>.callout-content>.callout {
+    box-sizing: border-box !important;
+}
+
+.callout[data-link-color] a {
+    color: var(--link-color) !important;
+}
+
+.callout[data-link-color] a:hover {
+    opacity: 0.8;
+}
+
+/* Column Layout for Lists */
+.callout[data-col] .callout-content ul,
+.callout[data-col] .callout-content ol,
+.callout[data-col] .callout-content .dataview.list-view-ul {
+    column-gap: 2em;
+    column-fill: balance;
+    width: 100%;
+}
+
+.callout[data-col] .callout-content li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .callout[data-callout="multi-callout"]>.callout-content {
+        flex-direction: column !important;
+    }
+
+    .callout[data-callout="multi-callout"]>.callout-content>.callout {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: none !important;
+    }
+}
