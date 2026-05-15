@@ -27,7 +27,9 @@ __export(main_exports, {
   default: () => SpecialCallouts
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian = require("obsidian");
+var import_obsidian4 = require("obsidian");
+
+// src/constants.ts
 var DEFAULT_STANDARD_COLORS = {
   red: "#e74c3c",
   blue: "#3498db",
@@ -40,11 +42,73 @@ var DEFAULT_STANDARD_COLORS = {
   grey: "#95a5a6",
   gray: "#95a5a6"
 };
+var DEFAULT_STANDARD_STYLES = {
+  note: { name: "note", bg: "#448aff", border: "#448aff", text: "", link: "", icon: "pencil", titleColor: "" },
+  abstract: { name: "abstract", bg: "#00b8d4", border: "#00b8d4", text: "", link: "", icon: "clipboard-list", titleColor: "" },
+  info: { name: "info", bg: "#00b8d4", border: "#00b8d4", text: "", link: "", icon: "info", titleColor: "" },
+  todo: { name: "todo", bg: "#448aff", border: "#448aff", text: "", link: "", icon: "check-circle-2", titleColor: "" },
+  tip: { name: "tip", bg: "#00bfa5", border: "#00bfa5", text: "", link: "", icon: "flame", titleColor: "" },
+  success: { name: "success", bg: "#00c853", border: "#00c853", text: "", link: "", icon: "check", titleColor: "" },
+  question: { name: "question", bg: "#64dd17", border: "#64dd17", text: "", link: "", icon: "help-circle", titleColor: "" },
+  warning: { name: "warning", bg: "#ff9100", border: "#ff9100", text: "", link: "", icon: "alert-triangle", titleColor: "" },
+  failure: { name: "failure", bg: "#ff5252", border: "#ff5252", text: "", link: "", icon: "x", titleColor: "" },
+  danger: { name: "danger", bg: "#ff1744", border: "#ff1744", text: "", link: "", icon: "zap", titleColor: "" },
+  bug: { name: "bug", bg: "#ff1744", border: "#ff1744", text: "", link: "", icon: "bug", titleColor: "" },
+  example: { name: "example", bg: "#7c4dff", border: "#7c4dff", text: "", link: "", icon: "list", titleColor: "" },
+  quote: { name: "quote", bg: "#9e9e9e", border: "#9e9e9e", text: "", link: "", icon: "quote", titleColor: "" }
+};
 var DEFAULT_SETTINGS = {
   customColors: [],
   standardColors: { ...DEFAULT_STANDARD_COLORS },
-  customStyles: []
+  customStyles: [],
+  standardStyles: { ...DEFAULT_STANDARD_STYLES },
+  customLayouts: []
 };
+var DEFAULT_CALLOUT_CONFIG = {
+  bg: "",
+  text: "",
+  textBorder: "",
+  link: "",
+  linkBorder: "",
+  titleColor: "",
+  titleBorder: "",
+  border: "",
+  borderWidth: "",
+  borderStyle: "",
+  neon: "",
+  radius: "",
+  gradient: "",
+  font: "",
+  fontSize: null,
+  col: null,
+  customLayout: null,
+  compact: false,
+  noIcon: false,
+  center: false,
+  titleCenter: false
+};
+var FONT_FAMILIES = {
+  "mono": "var(--font-monospace)",
+  "serif": "var(--font-interface-theme), ui-serif, serif",
+  "sans": "var(--font-interface), ui-sans-serif, sans-serif",
+  "hand": '"Comic Sans MS", "Chalkboard SE", "Comic Neue", cursive',
+  "marker": '"Permanent Marker", "Segoe Print", "Chalkboard", cursive'
+};
+var FONT_SIZES = {
+  1: "0.85em",
+  2: "0.92em",
+  3: "1em",
+  4: "1.2em",
+  5: "1.5em"
+};
+var QUICK_START_PRESETS = [
+  { name: "Ocean Deep", bg: "#0a192f", border: "#64ffda", title: "#64ffda", text: "#8892b0", icon: "waves" },
+  { name: "Neon Glow", bg: "#0f0e17", border: "#ff6bcb", title: "#ff6bcb", text: "#f9f4da", icon: "zap" },
+  { name: "Forest", bg: "#1b2420", border: "#95d5b2", title: "#95d5b2", text: "#d8f3dc", icon: "leaf" },
+  { name: "Sunset", bg: "#2d1b3d", border: "#ff7b54", title: "#ffcc70", text: "#ffeadb", icon: "sunset" }
+];
+
+// src/utils.ts
 function debounce(func, wait) {
   let timeout = null;
   return (...args) => {
@@ -62,233 +126,2431 @@ function normalizeHex(hex) {
   }
   return hex.toUpperCase();
 }
-var SpecialCallouts = class extends import_obsidian.Plugin {
-  constructor() {
-    super(...arguments);
+function resolveColor(value, standardColors, customColors) {
+  const std = standardColors[value.toLowerCase()];
+  if (std) return std;
+  const custom = customColors.find((c) => c.name.toLowerCase() === value.toLowerCase());
+  if (custom) return custom.hex;
+  return value;
+}
+function smartSplit(str) {
+  const result = [];
+  let current = "";
+  let depth = 0;
+  for (const char of str) {
+    if (char === "(") depth++;
+    else if (char === ")") depth--;
+    else if (char === "," && depth === 0) {
+      if (current.trim()) result.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  if (current.trim()) result.push(current.trim());
+  return result;
+}
+function applyTextBorder(element, borderType) {
+  const strokeColor = borderType === "dark-border" ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)";
+  element.style.setProperty("-webkit-text-stroke", `0.5px ${strokeColor}`);
+  element.style.textShadow = borderType === "dark-border" ? "0 0 2px rgba(0,0,0,0.5)" : "0 0 2px rgba(255,255,255,0.5)";
+}
+
+// src/parser.ts
+var LAYOUT_REGEX = /(?:^|[\s,])(\d+(?:[:,\/]\d+){1,2})(?:$|[\s,])/;
+var GROUP_REGEX = /^\(([^)]+)\)$/;
+function parseMetadata(content, standardColors, customColors, customLayoutNames = []) {
+  const config = { ...DEFAULT_CALLOUT_CONFIG };
+  let layoutParam = null;
+  let styleParam = null;
+  const layoutMatch = content.match(LAYOUT_REGEX);
+  let remainingContent = content;
+  if (layoutMatch) {
+    layoutParam = layoutMatch[1];
+    remainingContent = remainingContent.replace(layoutParam, "").replace(/,,/g, ",");
+  }
+  const params = smartSplit(remainingContent);
+  if (layoutParam) params.push(layoutParam.trim());
+  const styleParamValue = params.find((p) => p.toLowerCase().startsWith("style:"));
+  if (styleParamValue) {
+    styleParam = styleParamValue.split(":")[1].trim().toLowerCase();
+  }
+  const resolve = (val) => resolveColor(val, standardColors, customColors);
+  params.forEach((pair) => {
+    let key = "", rawValue = "";
+    const loweredPair = pair.trim().toLowerCase();
+    if (customLayoutNames.includes(loweredPair)) {
+      config.customLayout = loweredPair;
+      return;
+    }
+    if (loweredPair === "no-icon" || loweredPair === "noicon") {
+      config.noIcon = true;
+      return;
+    }
+    if (loweredPair === "center") {
+      config.center = true;
+      return;
+    }
+    if (pair.includes(":")) {
+      const parts = pair.split(":");
+      key = parts[0].trim().toLowerCase();
+      rawValue = parts.slice(1).join(":").trim();
+    } else {
+      return;
+    }
+    const groupMatch = rawValue.match(GROUP_REGEX);
+    if (groupMatch && ["text", "title", "link"].includes(key)) {
+      const groupValues = groupMatch[1].split(",").map((v) => v.trim().toLowerCase());
+      groupValues.forEach((val) => {
+        if (["dark-border", "light-border"].includes(val)) {
+          if (key === "text") config.textBorder = val;
+          else if (key === "title") config.titleBorder = val;
+          else if (key === "link") config.linkBorder = val;
+        } else if (val === "center" && key === "title") {
+          config.titleCenter = true;
+        } else {
+          const color = resolve(val);
+          if (key === "text") config.text = color;
+          else if (key === "title") config.titleColor = color;
+          else if (key === "link") config.link = color;
+        }
+      });
+      return;
+    }
+    const isBorderValue = ["dark-border", "light-border"].includes(rawValue.toLowerCase());
+    switch (key) {
+      case "col":
+      case "column":
+        const col = parseInt(rawValue);
+        if (!isNaN(col)) config.col = col;
+        break;
+      case "bg":
+      case "background":
+        config.bg = resolve(rawValue);
+        break;
+      case "text":
+        if (isBorderValue) {
+          config.textBorder = rawValue.toLowerCase();
+        } else {
+          config.text = resolve(rawValue);
+        }
+        break;
+      case "link":
+        if (isBorderValue) {
+          config.linkBorder = rawValue.toLowerCase();
+        } else {
+          config.link = resolve(rawValue);
+        }
+        break;
+      case "title":
+        if (isBorderValue) {
+          config.titleBorder = rawValue.toLowerCase();
+        } else if (rawValue.toLowerCase() === "center") {
+          config.titleCenter = true;
+        } else {
+          config.titleColor = resolve(rawValue);
+        }
+        break;
+      case "border":
+        config.border = resolve(rawValue);
+        break;
+      case "border-width":
+        config.borderWidth = rawValue;
+        break;
+      case "border-style":
+        config.borderStyle = rawValue;
+        break;
+      case "neon":
+        config.neon = resolve(rawValue);
+        break;
+      case "radius":
+        config.radius = rawValue;
+        break;
+      case "gradient":
+        config.gradient = rawValue;
+        break;
+      case "font":
+        config.font = rawValue.toLowerCase();
+        break;
+      case "font-size":
+        const size = parseInt(rawValue);
+        if (!isNaN(size) && size >= 1 && size <= 5) {
+          config.fontSize = size;
+        }
+        break;
+      case "compact":
+      case "dense":
+        config.compact = true;
+        break;
+      case "padding":
+        if (rawValue === "0") config.compact = true;
+        break;
+      case "no-icon":
+      case "noicon":
+        config.noIcon = true;
+        break;
+      case "center":
+        config.center = true;
+        break;
+    }
+  });
+  return { config, layoutParam, styleParam };
+}
+function parseGridLayout(param) {
+  const match = param.match(/^(\d+)[:,\/](\d+)(?:[:,\/](\d+))?$/);
+  if (!match) return null;
+  return {
+    position: parseInt(match[1]),
+    columns: parseInt(match[2]),
+    row: match[3] ? parseInt(match[3]) : 1
+  };
+}
+function extractMetadata(fullText) {
+  const trimmedText = fullText.replace(/^\s+/, "");
+  if (!trimmedText.startsWith("(")) return null;
+  let depth = 0;
+  let endIndex = -1;
+  for (let i = 0; i < trimmedText.length; i++) {
+    if (trimmedText[i] === "(") depth++;
+    else if (trimmedText[i] === ")") {
+      depth--;
+      if (depth === 0) {
+        endIndex = i;
+        break;
+      }
+    }
+  }
+  if (endIndex === -1) return null;
+  return {
+    content: trimmedText.substring(1, endIndex),
+    title: trimmedText.substring(endIndex + 1).trim()
+  };
+}
+
+// src/processor.ts
+var CalloutProcessor = class {
+  constructor(settings) {
     this.observers = /* @__PURE__ */ new Map();
     this.processedElements = /* @__PURE__ */ new WeakMap();
-  }
-  async onload() {
-    await this.loadSettings();
-    this.addSettingTab(new SpecialCalloutsSettingTab(this.app, this));
+    this.settings = settings;
     this.debouncedColumnApply = debounce((container, colCount) => {
       this.applyColumnsToContainer(container, colCount);
     }, 50);
-    this.registerMarkdownPostProcessor((element) => {
-      const callouts = element.querySelectorAll(".callout");
-      callouts.forEach((callout) => this.processCallout(callout));
+  }
+  /**
+   * Updates the settings reference
+   */
+  updateSettings(settings) {
+    this.settings = settings;
+  }
+  /**
+   * Main entry point for processing a callout element
+   */
+  processCallout(calloutEl) {
+    try {
+      const titleEl = calloutEl.querySelector(".callout-title");
+      if (!titleEl) return;
+      const innerTitleEl = titleEl.querySelector(".callout-title-inner") || titleEl;
+      const fullText = innerTitleEl.textContent || "";
+      const cacheKey = `${calloutEl.getAttribute("data-callout")}_${fullText}`;
+      if (this.processedElements.get(calloutEl) === cacheKey) return;
+      this.processedElements.set(calloutEl, cacheKey);
+      const calloutType = calloutEl.getAttribute("data-callout");
+      this.applyStandardStyleIfModified(calloutEl, calloutType);
+      this.applyCustomStyleByType(calloutEl, calloutType);
+      this.processMetadata(calloutEl, innerTitleEl, fullText);
+    } catch (error) {
+      console.error("Special Callouts: Error processing callout", error);
+    }
+  }
+  /**
+   * Applies standard style if user has modified it
+   */
+  applyStandardStyleIfModified(calloutEl, calloutType) {
+    if (!calloutType) return;
+    const standardStyle = this.settings.standardStyles[calloutType.toLowerCase()];
+    const defaultStyle = DEFAULT_STANDARD_STYLES[calloutType.toLowerCase()];
+    if (standardStyle && defaultStyle) {
+      const isModified = standardStyle.bg !== defaultStyle.bg || standardStyle.text !== defaultStyle.text || standardStyle.titleColor !== defaultStyle.titleColor || standardStyle.link !== defaultStyle.link;
+      if (isModified) {
+        this.applyStyleObject(calloutEl, standardStyle);
+      }
+    }
+  }
+  /**
+   * Applies custom style if callout type matches a custom style name
+   */
+  applyCustomStyleByType(calloutEl, calloutType) {
+    if (!calloutType) return;
+    const typeStyle = this.settings.customStyles.find(
+      (s) => s.name.toLowerCase() === calloutType.toLowerCase()
+    );
+    if (typeStyle) {
+      this.applyStyleObject(calloutEl, typeStyle);
+    }
+  }
+  /**
+   * Processes inline metadata from callout title
+   */
+  processMetadata(calloutEl, innerTitleEl, fullText) {
+    const extracted = extractMetadata(fullText);
+    if (!extracted) return;
+    if (innerTitleEl.textContent !== extracted.title) {
+      innerTitleEl.textContent = extracted.title;
+    }
+    const layoutNames = (this.settings.customLayouts || []).map((l) => l.name);
+    const { config, layoutParam, styleParam } = parseMetadata(
+      extracted.content,
+      this.settings.standardColors,
+      this.settings.customColors,
+      layoutNames
+    );
+    if (styleParam) {
+      const manualStyle = this.settings.customStyles.find(
+        (s) => s.name.toLowerCase() === styleParam
+      );
+      if (manualStyle) {
+        this.applyStyleObject(calloutEl, manualStyle);
+      }
+    }
+    this.applyConfig(calloutEl, config);
+    if (layoutParam) {
+      const gridConfig = parseGridLayout(layoutParam);
+      if (gridConfig && gridConfig.columns > 0) {
+        this.applyGridLayout(calloutEl, gridConfig);
+      }
+    }
+    if (config.col !== null) {
+      calloutEl.setAttribute("data-col", config.col.toString());
+      calloutEl.style.setProperty("--smart-list-cols", config.col.toString());
+      this.applyColumnsToContainer(calloutEl, config.col);
+      this.setupObserver(calloutEl, config.col);
+      this.scheduleColumnRetry(calloutEl, config.col);
+    }
+    if (config.customLayout) {
+      const layout = this.settings.customLayouts.find((l) => l.name.toLowerCase() === config.customLayout);
+      if (layout) {
+        this.applyCustomLayoutAreas(calloutEl, layout);
+      }
+    }
+  }
+  /**
+   * Applies configuration to callout element
+   */
+  applyConfig(calloutEl, config) {
+    if (config.bg) {
+      this.applyColor(calloutEl, config.bg);
+    }
+    if (config.text) {
+      this.applyTextColor(calloutEl, config.text);
+    }
+    if (config.textBorder) {
+      const content = calloutEl.querySelector(".callout-content");
+      if (content) applyTextBorder(content, config.textBorder);
+    }
+    if (config.link) {
+      this.applyLinkColor(calloutEl, config.link);
+    }
+    if (config.linkBorder) {
+      calloutEl.setAttribute("data-link-border", config.linkBorder);
+    }
+    if (config.titleColor) {
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) title.style.color = config.titleColor;
+      const icon = calloutEl.querySelector(".callout-icon");
+      if (icon) icon.style.color = config.titleColor;
+    }
+    if (config.titleBorder) {
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) applyTextBorder(title, config.titleBorder);
+    }
+    if (config.noIcon) {
+      const icon = calloutEl.querySelector(".callout-icon");
+      if (icon) icon.style.display = "none";
+    }
+    if (config.border) {
+      if (config.border === "none") {
+        calloutEl.style.setProperty("border", "none", "important");
+      } else {
+        const style = config.borderStyle || "solid";
+        calloutEl.style.setProperty("border", `1px ${style} ${config.border}`, "important");
+      }
+    }
+    if (config.borderWidth) {
+      calloutEl.style.borderWidth = config.borderWidth + "px";
+    }
+    if (config.borderStyle && !config.border) {
+      calloutEl.style.borderStyle = config.borderStyle;
+    }
+    if (config.radius) {
+      calloutEl.style.borderRadius = config.radius + "px";
+      calloutEl.style.overflow = "hidden";
+    }
+    if (config.neon) {
+      const neonBorder = `2px solid ${config.neon}`;
+      calloutEl.style.setProperty("border", neonBorder, "important");
+      calloutEl.style.boxShadow = `0 0 8px 2px ${config.neon}40, inset 0 0 8px 2px ${config.neon}20`;
+    }
+    if (config.gradient) {
+      this.applyGradient(calloutEl, config.gradient);
+    }
+    if (config.font && FONT_FAMILIES[config.font]) {
+      calloutEl.style.setProperty("--font-interface", FONT_FAMILIES[config.font]);
+      calloutEl.style.setProperty("font-family", FONT_FAMILIES[config.font], "important");
+    }
+    if (config.fontSize && FONT_SIZES[config.fontSize]) {
+      calloutEl.style.fontSize = FONT_SIZES[config.fontSize];
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) title.style.fontSize = "1em";
+    }
+    if (config.compact) {
+      calloutEl.setAttribute("data-compact", "true");
+      calloutEl.style.setProperty("padding", "0.3em", "important");
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) {
+        title.style.setProperty("padding", "0.3em 0.6em", "important");
+        title.style.setProperty("min-height", "auto", "important");
+      }
+      const content = calloutEl.querySelector(".callout-content");
+      if (content) {
+        content.style.setProperty("padding", "0.3em 0.6em", "important");
+      }
+    }
+    if (config.center) {
+      calloutEl.style.setProperty("text-align", "center", "important");
+      calloutEl.style.setProperty("align-items", "center", "important");
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) {
+        title.style.setProperty("justify-content", "center", "important");
+        title.style.setProperty("text-align", "center", "important");
+      }
+      const content = calloutEl.querySelector(".callout-content");
+      if (content) {
+        content.style.setProperty("text-align", "center", "important");
+        content.style.setProperty("display", "flex", "important");
+        content.style.setProperty("flex-direction", "column", "important");
+        content.style.setProperty("align-items", "center", "important");
+      }
+    } else if (config.titleCenter) {
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) {
+        title.style.setProperty("justify-content", "center", "important");
+        title.style.setProperty("text-align", "center", "important");
+      }
+    }
+  }
+  /**
+   * Applies gradient background
+   */
+  applyGradient(calloutEl, gradient) {
+    const colors = gradient.split("-");
+    if (colors.length === 2) {
+      const c1 = resolveColor(colors[0], this.settings.standardColors, this.settings.customColors);
+      const c2 = resolveColor(colors[1], this.settings.standardColors, this.settings.customColors);
+      calloutEl.style.background = `linear-gradient(90deg, ${c1}, ${c2})`;
+      calloutEl.style.border = "none";
+      calloutEl.style.color = "white";
+    }
+  }
+  /**
+   * Gets the direct wrapper of the callout under .callout-content,
+   * which handles the nested blockquote issue.
+   */
+  getDirectWrapper(calloutEl) {
+    let current = calloutEl;
+    let parent = current.parentElement;
+    while (parent && !parent.classList.contains("callout-content")) {
+      current = parent;
+      parent = parent.parentElement;
+    }
+    return current || calloutEl;
+  }
+  /**
+   * Neutralizes blockquote wrapper styles to fix the "purple line" bug
+   */
+  neutralizeWrapper(wrapper) {
+    if (wrapper.tagName === "BLOCKQUOTE") {
+      wrapper.style.setProperty("border", "none", "important");
+      wrapper.style.setProperty("margin", "0", "important");
+      wrapper.style.setProperty("padding", "0", "important");
+    } else if (wrapper.tagName === "P") {
+      wrapper.style.setProperty("margin", "0", "important");
+      wrapper.style.setProperty("padding", "0", "important");
+    }
+  }
+  /**
+   * Applies grid layout to callout
+   */
+  applyGridLayout(calloutEl, gridConfig) {
+    const gap = 10;
+    const widthCalc = `calc((100% - ${(gridConfig.columns - 1) * gap}px) / ${gridConfig.columns})`;
+    const wrapper = this.getDirectWrapper(calloutEl);
+    this.neutralizeWrapper(wrapper);
+    wrapper.style.flex = `0 0 ${widthCalc}`;
+    wrapper.style.width = widthCalc;
+    wrapper.style.maxWidth = widthCalc;
+    wrapper.style.setProperty("margin", "0", "important");
+    if (wrapper !== calloutEl) {
+      calloutEl.style.width = "100%";
+      calloutEl.style.margin = "0";
+    }
+    calloutEl.setAttribute("data-grid-pos", gridConfig.position.toString());
+    calloutEl.setAttribute("data-grid-cols", gridConfig.columns.toString());
+    calloutEl.setAttribute("data-grid-row", gridConfig.row.toString());
+  }
+  /**
+   * Applies visually built custom layouts from settings using grid-template-areas
+   */
+  applyCustomLayoutAreas(calloutEl, layout) {
+    const content = calloutEl.querySelector(".callout-content");
+    if (!content) return;
+    const contentEl = content;
+    contentEl.style.setProperty("display", "grid", "important");
+    contentEl.style.setProperty("grid-template-columns", `repeat(${layout.cols}, 1fr)`, "important");
+    contentEl.style.setProperty("grid-template-areas", layout.gridAreas, "important");
+    contentEl.style.setProperty("gap", "10px", "important");
+    contentEl.style.setProperty("align-items", "stretch", "important");
+    this.setupCustomLayoutObserver(calloutEl);
+    this.applyAreasToChildren(contentEl);
+  }
+  setupCustomLayoutObserver(calloutEl) {
+    var _a;
+    const contentEl = calloutEl.querySelector(".callout-content");
+    if (!contentEl) return;
+    const observer = new MutationObserver(() => {
+      this.applyAreasToChildren(contentEl);
+    });
+    observer.observe(contentEl, { childList: true });
+    if (this.observers.has(calloutEl)) {
+      (_a = this.observers.get(calloutEl)) == null ? void 0 : _a.disconnect();
+    }
+    this.observers.set(calloutEl, observer);
+  }
+  applyAreasToChildren(contentEl) {
+    const children = Array.from(contentEl.children);
+    let areaIndex = 1;
+    children.forEach((child) => {
+      const el = child;
+      if (el.tagName === "BR" || el.tagName === "HR") return;
+      if (el.tagName === "P") {
+        const html = el.innerHTML.trim();
+        if (html === "" || html === "<br>") return;
+      }
+      this.neutralizeWrapper(el);
+      el.style.setProperty("grid-area", `area${areaIndex}`, "important");
+      el.style.setProperty("margin", "0", "important");
+      el.style.setProperty("height", "100%", "important");
+      el.style.setProperty("display", "flex", "important");
+      el.style.setProperty("flex-direction", "column", "important");
+      const innerCallout = el.classList.contains("callout") ? el : el.querySelector(".callout");
+      if (innerCallout) {
+        const calloutHtmlEl = innerCallout;
+        calloutHtmlEl.style.setProperty("width", "100%", "important");
+        calloutHtmlEl.style.setProperty("margin", "0", "important");
+        calloutHtmlEl.style.setProperty("flex", "1", "important");
+        calloutHtmlEl.style.setProperty("display", "flex", "important");
+        calloutHtmlEl.style.setProperty("flex-direction", "column", "important");
+      }
+      areaIndex++;
     });
   }
-  processCallout(calloutEl) {
-    const titleEl = calloutEl.querySelector(".callout-title");
-    if (!titleEl) return;
-    const innerTitleEl = titleEl.querySelector(".callout-title-inner") || titleEl;
-    const fullText = innerTitleEl.textContent || "";
-    const cacheKey = `${calloutEl.getAttribute("data-callout")}_${fullText}`;
-    if (this.processedElements.get(calloutEl) === cacheKey) return;
-    this.processedElements.set(calloutEl, cacheKey);
-    const calloutType = calloutEl.getAttribute("data-callout");
-    const typeStyle = this.settings.customStyles.find((s) => s.name.toLowerCase() === (calloutType == null ? void 0 : calloutType.toLowerCase()));
-    if (typeStyle) this.applyStyleObject(calloutEl, typeStyle);
-    const metadataRegex = /^\s*\(([^\)]+)\)/;
-    const match = fullText.match(metadataRegex);
-    if (match) {
-      const content = match[1];
-      const processedTitle = fullText.replace(match[0], "").trim();
-      if (innerTitleEl.textContent !== processedTitle) innerTitleEl.textContent = processedTitle;
-      let params = [];
-      let layoutParam = null;
-      const layoutRegex = /(?:^|[\s,])(\d+(?:[:,\/]\d+){1,2})(?:$|[\s,])/;
-      const layoutMatch = content.match(layoutRegex);
-      let remainingContent = content;
-      if (layoutMatch) {
-        layoutParam = layoutMatch[1];
-        remainingContent = remainingContent.replace(layoutParam, "").replace(/,,/g, ",");
-      }
-      params = remainingContent.split(",").map((p) => p.trim()).filter((p) => p.length > 0);
-      if (layoutParam) params.push(layoutParam.trim());
-      const styleParam = params.find((p) => p.toLowerCase().startsWith("style:"));
-      if (styleParam) {
-        const styleName = styleParam.split(":")[1].trim().toLowerCase();
-        const manualStyle = this.settings.customStyles.find((s) => s.name.toLowerCase() === styleName);
-        if (manualStyle) this.applyStyleObject(calloutEl, manualStyle);
-      }
-      let targetColCount = null;
-      params.forEach((pair) => {
-        let key = "", rawValue = "";
-        const subplotMatch = pair.match(/^(\d+)[:,\/](\d+)(?:[:,\/](\d+))?$/);
-        if (subplotMatch) {
-          const cols = parseInt(subplotMatch[2]);
-          if (cols > 0) {
-            const gap = 10;
-            const widthCalc = `calc((100% - ${(cols - 1) * gap}px) / ${cols})`;
-            calloutEl.style.flex = `0 0 ${widthCalc}`;
-            calloutEl.style.width = widthCalc;
-            calloutEl.style.maxWidth = widthCalc;
-            calloutEl.style.setProperty("margin", "0", "important");
-          }
-          return;
-        }
-        if (pair.includes(":")) {
-          const parts = pair.split(":");
-          key = parts[0].trim().toLowerCase();
-          rawValue = parts[1].trim();
-        } else {
-          return;
-        }
-        const resolveColor = (val) => {
-          const std = this.settings.standardColors[val.toLowerCase()];
-          if (std) return std;
-          const cst = this.settings.customColors.find((c) => c.name.toLowerCase() === val.toLowerCase());
-          return cst ? cst.hex : val;
-        };
-        if (key === "col" || key === "column") {
-          const col = parseInt(rawValue);
-          if (!isNaN(col)) targetColCount = col;
-        } else if (["bg", "background", "color"].includes(key)) {
-          this.applyColor(calloutEl, resolveColor(rawValue));
-        } else if (["font", "text"].includes(key)) {
-          this.applyTextColor(calloutEl, resolveColor(rawValue));
-        } else if (["link", "a"].includes(key)) {
-          this.applyLinkColor(calloutEl, resolveColor(rawValue));
-        } else if (key === "icon") {
-          this.applyIcon(calloutEl, rawValue);
-        } else if (key === "glow") {
-          const glow = parseInt(rawValue);
-          if (!isNaN(glow)) {
-            calloutEl.style.boxShadow = `0 0 ${glow * 2}px ${glow}px var(--callout-color)`;
-            calloutEl.style.zIndex = "1";
-          }
-        } else if (key === "gradient") {
-          const colors = rawValue.split("-");
-          if (colors.length === 2) {
-            const c1 = resolveColor(colors[0]);
-            const c2 = resolveColor(colors[1]);
-            calloutEl.style.background = `linear-gradient(90deg, ${c1}, ${c2})`;
-            calloutEl.style.border = "none";
-            calloutEl.style.color = "white";
-          }
-        } else if (key === "radius") {
-          calloutEl.style.borderRadius = rawValue + "px";
-        } else if (key === "border-width") {
-          calloutEl.style.borderWidth = rawValue + "px";
-        }
-      });
-      if (targetColCount !== null) {
-        calloutEl.setAttribute("data-col", targetColCount.toString());
-        calloutEl.style.setProperty("--smart-list-cols", targetColCount.toString());
-        this.applyColumnsToContainer(calloutEl, targetColCount);
-        this.setupObserver(calloutEl, targetColCount);
-      }
-    }
-  }
+  /**
+   * Applies a style object to callout
+   */
   applyStyleObject(calloutEl, style) {
-    this.applyColor(calloutEl, style.bg, style.border);
+    this.applyColor(calloutEl, style.bg);
     this.applyTextColor(calloutEl, style.text);
     this.applyLinkColor(calloutEl, style.link);
-    this.applyIcon(calloutEl, style.icon);
-  }
-  applyColor(callout, color, borderColor) {
-    callout.style.setProperty("--callout-color", color);
-    callout.style.borderLeftColor = color;
-    callout.style.background = "";
-    callout.style.backgroundColor = `color-mix(in srgb, ${color} 10%, transparent)`;
-    if (borderColor) {
-      callout.style.border = `1px solid ${borderColor}`;
-      callout.style.borderLeft = `5px solid ${color}`;
+    if (style.border) {
+      const width = style.borderWidth ? style.borderWidth.endsWith("px") ? style.borderWidth : style.borderWidth + "px" : style.boldBorder ? "4px" : "1px";
+      const bStyle = style.borderStyle || "solid";
+      calloutEl.style.setProperty("border", `${width} ${bStyle} ${style.border}`, "important");
+      calloutEl.style.borderLeft = `${width} ${bStyle} ${style.border}`;
     }
-    const title = callout.querySelector(".callout-title");
-    if (title) title.style.color = color;
-    const icon = callout.querySelector(".callout-icon");
-    if (icon) icon.style.color = color;
+    if (style.titleColor) {
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) title.style.color = style.titleColor;
+      const icon = calloutEl.querySelector(".callout-icon");
+      if (icon) icon.style.color = style.titleColor;
+    }
+    if (style.font && FONT_FAMILIES[style.font]) {
+      calloutEl.style.setProperty("--font-interface", FONT_FAMILIES[style.font]);
+      calloutEl.style.setProperty("font-family", FONT_FAMILIES[style.font], "important");
+    }
+    if (style.fontSize && FONT_SIZES[style.fontSize]) {
+      calloutEl.style.fontSize = FONT_SIZES[style.fontSize];
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) title.style.fontSize = "1em";
+    }
+    if (style.borderWidth) calloutEl.style.setProperty("--callout-border-width", style.borderWidth);
+    if (style.borderStyle) calloutEl.style.borderStyle = style.borderStyle;
+    if (style.borderRadius) calloutEl.style.borderRadius = style.borderRadius;
+    if (style.noIcon) {
+      calloutEl.classList.add("no-icon");
+      const icon = calloutEl.querySelector(".callout-icon");
+      if (icon) icon.style.display = "none";
+    }
+    if (style.compact) {
+      calloutEl.style.setProperty("padding", "0.3em", "important");
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) {
+        title.style.setProperty("padding", "0.3em 0.6em", "important");
+        title.style.setProperty("min-height", "auto", "important");
+      }
+      const content = calloutEl.querySelector(".callout-content");
+      if (content) {
+        content.style.setProperty("padding", "0.3em 0.6em", "important");
+      }
+    }
+    if (style.center) {
+      calloutEl.style.setProperty("text-align", "center", "important");
+      calloutEl.style.setProperty("align-items", "center", "important");
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) {
+        title.style.setProperty("justify-content", "center", "important");
+        title.style.setProperty("text-align", "center", "important");
+      }
+      const content = calloutEl.querySelector(".callout-content");
+      if (content) {
+        content.style.setProperty("text-align", "center", "important");
+        content.style.setProperty("display", "flex", "important");
+        content.style.setProperty("flex-direction", "column", "important");
+        content.style.setProperty("align-items", "center", "important");
+      }
+    } else if (style.titleCenter) {
+      const title = calloutEl.querySelector(".callout-title");
+      if (title) {
+        title.style.setProperty("justify-content", "center", "important");
+        title.style.setProperty("text-align", "center", "important");
+      }
+    }
+    if (style.neon) {
+      calloutEl.style.boxShadow = `0 0 10px ${style.neon}, inset 0 0 5px ${style.neon}20`;
+      calloutEl.style.borderColor = style.neon;
+    }
   }
+  /**
+   * Applies background color
+   */
+  applyColor(callout, color) {
+    callout.style.backgroundColor = `color-mix(in srgb, ${color} 15%, transparent)`;
+  }
+  /**
+   * Applies text color
+   */
   applyTextColor(callout, color) {
     const content = callout.querySelector(".callout-content");
     if (content) content.style.color = color;
   }
+  /**
+   * Applies link color
+   */
   applyLinkColor(callout, color) {
     callout.setAttribute("data-link-color", color);
     callout.style.setProperty("--link-color", color);
   }
-  applyIcon(callout, iconName) {
-    const iconEl = callout.querySelector(".callout-icon");
-    if (iconEl && iconName) {
-      iconEl.empty();
-      (0, import_obsidian.setIcon)(iconEl, iconName);
-    }
-  }
+  /**
+   * Applies column layout to list containers using CSS Grid
+   * 
+   * AI_CONTEXT: Uses CSS Grid instead of CSS Columns for reliable distribution.
+   * AI_CONTEXT_WHY: CSS Columns with column-fill has unpredictable behavior.
+   *                 Grid with manual row calculation gives exact control.
+   * AI_CONTEXT_WARN: Do NOT switch back to CSS columns - they don't work reliably.
+   * AI_CONTEXT_SIDE_EFFECT: Changes list display to grid, sets grid-row on each li.
+   * 
+   * Distribution: Items flow top-to-bottom, then left-to-right (newspaper style)
+   * Formula: rowCount = Math.ceil(itemCount / colCount)
+   * Example: 7 items, 2 cols -> 4 rows -> Col1: 1,2,3,4  Col2: 5,6,7
+   */
   applyColumnsToContainer(container, colCount) {
     requestAnimationFrame(() => {
       const contentEl = container.querySelector(".callout-content");
       if (!contentEl) return;
-      const lists = contentEl.querySelectorAll("ul, ol, .dataview.list-view-ul, .dataview-result-list-ul");
+      const lists = contentEl.querySelectorAll("ul, ol, .dataview.list-view-ul, .dataview-result-list-ul, .dataview ul, .block-language-dataview ul");
       lists.forEach((list) => {
         const listEl = list;
-        listEl.style.columnCount = colCount.toString();
-        listEl.style.columnGap = "2em";
-        listEl.style.columnFill = "balance";
+        const items = listEl.querySelectorAll(":scope > li");
+        const itemCount = items.length;
+        if (itemCount === 0) return;
+        const rowCount = Math.ceil(itemCount / colCount);
+        listEl.style.display = "grid";
+        listEl.style.gridTemplateColumns = `repeat(${colCount}, 1fr)`;
+        listEl.style.gridTemplateRows = `repeat(${rowCount}, auto)`;
+        listEl.style.gap = "0.25em 2em";
         listEl.style.width = "100%";
-        listEl.querySelectorAll("li").forEach((li) => {
-          li.style.breakInside = "avoid";
-          li.style.pageBreakInside = "avoid";
+        listEl.style.columnCount = "";
+        listEl.style.columnFill = "";
+        listEl.style.height = "";
+        items.forEach((li, index) => {
+          const liEl = li;
+          const col = Math.floor(index / rowCount) + 1;
+          const row = index % rowCount + 1;
+          liEl.style.gridColumn = col.toString();
+          liEl.style.gridRow = row.toString();
         });
       });
     });
   }
+  /**
+   * Schedules retry attempts for column layout (handles Dataview/Homepage delayed rendering)
+   * 
+   * AI_CONTEXT: Dataview and Homepage plugins render content asynchronously after initial page load.
+   *             Without retry, columns won't apply when page first opens.
+   * AI_CONTEXT_WHY: MutationObserver alone isn't enough - sometimes content is already there but
+   *                 not fully rendered. Multiple retries at increasing intervals ensure we catch it.
+   * AI_CONTEXT_WARN: Do NOT remove retry delays or reduce them significantly.
+   *                  2000ms final delay is intentional for slow Dataview queries.
+   * AI_CONTEXT_SIDE_EFFECT: Creates 5 setTimeout calls per col:X callout. Minimal performance impact.
+   */
+  scheduleColumnRetry(calloutEl, colCount) {
+    const retryDelays = [100, 300, 600, 1e3, 2e3];
+    retryDelays.forEach((delay) => {
+      setTimeout(() => {
+        const contentEl = calloutEl.querySelector(".callout-content");
+        if (!contentEl) return;
+        const lists = contentEl.querySelectorAll("ul, ol, .dataview.list-view-ul, .dataview-result-list-ul, .dataview ul, .block-language-dataview ul");
+        if (lists.length > 0) {
+          this.applyColumnsToContainer(calloutEl, colCount);
+        }
+      }, delay);
+    });
+  }
+  /**
+   * Sets up mutation observer for dynamic content
+   */
   setupObserver(calloutEl, colCount) {
     var _a;
-    if (this.observers.has(calloutEl)) (_a = this.observers.get(calloutEl)) == null ? void 0 : _a.disconnect();
+    if (this.observers.has(calloutEl)) {
+      (_a = this.observers.get(calloutEl)) == null ? void 0 : _a.disconnect();
+    }
     const contentEl = calloutEl.querySelector(".callout-content");
     if (!contentEl) return;
     const observer = new MutationObserver((mutations) => {
       let update = false;
       mutations.forEach((m) => m.addedNodes.forEach((n) => {
-        if (n.nodeType === 1 && (n.matches("ul,ol,.dataview") || n.querySelector("ul,ol,.dataview"))) update = true;
+        if (n.nodeType === 1 && (n.matches("ul,ol,.dataview") || n.querySelector("ul,ol,.dataview"))) {
+          update = true;
+        }
       }));
       if (update) this.debouncedColumnApply(calloutEl, colCount);
     });
     observer.observe(contentEl, { childList: true, subtree: true });
     this.observers.set(calloutEl, observer);
   }
-  onunload() {
+  /**
+   * Cleans up all observers
+   */
+  cleanup() {
     this.observers.forEach((o) => o.disconnect());
     this.observers.clear();
   }
-  async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+};
+
+// src/modals/SuggesterModal.ts
+var import_obsidian = require("obsidian");
+var CustomCalloutSuggester = class extends import_obsidian.SuggestModal {
+  constructor(app, styles, editor) {
+    super(app);
+    this.styles = styles;
+    this.editor = editor;
+    this.setPlaceholder("Select a custom callout style...");
   }
-  async saveSettings() {
-    await this.saveData(this.settings);
+  getSuggestions(query) {
+    return this.styles.filter(
+      (s) => s.name.toLowerCase().includes(query.toLowerCase())
+    );
+  }
+  renderSuggestion(style, el) {
+    el.createDiv({ text: style.name, cls: "suggestion-title" });
+    el.createDiv({
+      text: `${style.bg} \u2022 ${style.icon}`,
+      cls: "suggestion-note"
+    });
+  }
+  onChooseSuggestion(style) {
+    const cursor = this.editor.getCursor();
+    const calloutText = `> [!${style.name}]
+> `;
+    this.editor.replaceRange(calloutText, cursor);
+    this.editor.setCursor({ line: cursor.line + 1, ch: 2 });
   }
 };
-var SpecialCalloutsSettingTab = class extends import_obsidian.PluginSettingTab {
+
+// src/modals/MetadataModal.ts
+function showMetadataReference() {
+  const modal = document.createElement("div");
+  modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--background-primary);
+        border: 1px solid var(--background-modifier-border);
+        border-radius: 16px;
+        padding: 2.5rem;
+        max-width: 700px;
+        width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
+        z-index: 10000;
+        box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5);
+    `;
+  const title = modal.createEl("h2", { text: "Metadata Reference" });
+  title.style.cssText = "margin: 0 0 2rem 0; font-size: 1.8rem; font-weight: 700; color: var(--text-normal); letter-spacing: -0.02em;";
+  const content = modal.createDiv();
+  content.innerHTML = `
+        <div style="margin-bottom: 2rem;">
+            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u{1F3A8} Colors</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>bg:red</code> or <code>bg:#ff0000</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Background color</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>text:white</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Content text color</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>title:cyan</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Title text color</td></tr>
+                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>link:orange</code></td><td style="padding: 10px 0; color: var(--text-muted);">Link color</td></tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">Aa Typography</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>font:mono</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Monospace font</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>font:serif</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Serif font</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>font:hand</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Handwritten style</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>font-size:1</code> to <code>5</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Font size (3 is default)</td></tr>
+                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>text:dark-border</code></td><td style="padding: 10px 0; color: var(--text-muted);">Dark outline on text</td></tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u2728 Text Border (Readability)</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>text:dark-border</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Dark outline on text</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>text:light-border</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Light outline on text</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>text:(white, dark-border)</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Grouped: color + border</td></tr>
+                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>title:(cyan, dark-border)</code></td><td style="padding: 10px 0; color: var(--text-muted);">Same for title</td></tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u{1F3A8} Effects</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>neon:#00f2ff</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Neon border with glow</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>gradient:blue-purple</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">2-color gradient background</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border:red</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Border color</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border:none</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Remove all borders</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border-width:4</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Border thickness (px)</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border-style:dashed</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">dashed, dotted, double, solid</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>radius:20</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Corner roundness (px)</td></tr>
+                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>no-icon</code></td><td style="padding: 10px 0; color: var(--text-muted);">Hide the callout icon</td></tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u{1F4CA} Layout</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>col:3</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Multi-column list (inside callout)</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>compact</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Reduce padding (dense mode)</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>center</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Center title and content</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>title:center</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Center title only</td></tr>
+                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>1:3</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Grid: position 1 of 3 columns</td></tr>
+                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>1:3:2</code></td><td style="padding: 10px 0; color: var(--text-muted);">Grid: pos 1, 3 cols, row 2</td></tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u26A1 Presets</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <tr><td style="padding: 10px 0; width: 45%; color: var(--code-normal);"><code>style:my-style</code></td><td style="padding: 10px 0; color: var(--text-muted);">Apply saved custom style</td></tr>
+            </table>
+        </div>
+
+        <div style="background: var(--background-primary-alt); padding: 1rem; border-radius: 8px; border: 1px solid var(--background-modifier-border); margin-bottom: 1rem;">
+            <strong style="color: var(--text-accent);">\u{1F4A1} Example:</strong><br>
+            <code style="display: block; margin-top: 0.5rem; padding: 0.5rem; background: var(--background-secondary); border-radius: 4px;">(bg:#1a1a2e, text:(white, dark-border), neon:#00f2ff, radius:10)</code>
+        </div>
+
+        <div style="background: var(--background-primary-alt); padding: 1rem; border-radius: 8px; border: 1px solid var(--background-modifier-border);">
+            <strong style="color: var(--text-accent);">Pro Tip:</strong> Use <code>Ctrl/Cmd+P</code> and type "Insert Custom Callout" to quickly access your styles.
+        </div>
+    `;
+  const closeBtn = modal.createEl("button", { text: "Close" });
+  closeBtn.style.cssText = `
+        margin-top: 2rem;
+        padding: 0.8rem 1.5rem;
+        background: var(--interactive-accent);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        width: 100%;
+        transition: opacity 0.2s ease;
+    `;
+  closeBtn.onmouseover = () => closeBtn.style.opacity = "0.9";
+  closeBtn.onmouseout = () => closeBtn.style.opacity = "1";
+  closeBtn.onclick = () => {
+    modal.remove();
+    overlay.remove();
+  };
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 9999;";
+  overlay.onclick = () => {
+    modal.remove();
+    overlay.remove();
+  };
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+}
+
+// src/settings/SettingsTab.ts
+var import_obsidian3 = require("obsidian");
+
+// src/modals/HowToModal.ts
+function showHowToUse() {
+  const modal = document.createElement("div");
+  modal.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 12px; padding: 2rem; max-width: 650px; max-height: 80vh; overflow-y: auto; z-index: 10000; box-shadow: 0 8px 32px rgba(0,0,0,0.3);";
+  const title = modal.createEl("h2", { text: "How to Use Custom Styles" });
+  title.style.cssText = "margin: 0 0 1.5rem 0; font-size: 1.4rem;";
+  const content = modal.createDiv();
+  content.innerHTML = `
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">\u2328\uFE0F Quick Insert via Command Palette</h3>
+            <p style="margin: 0 0 0.5rem 0;">Press <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px;">Ctrl/Cmd+P</code> and type:</p>
+            <ul style="margin: 0; padding-left: 1.5rem;">
+                <li style="margin-bottom: 0.5rem;"><strong>"Insert Custom Callout"</strong> - Browse all your saved styles</li>
+                <li><strong>"Insert [style-name]"</strong> - Directly insert a specific style</li>
+            </ul>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">\u{1F4DD} Manual Usage Methods</h3>
+            
+            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background-secondary); border-radius: 6px;">
+                <strong>Method 1: Direct callout type</strong><br>
+                <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px;">> [!your-style-name]</code>
+            </div>
+            
+            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background-secondary); border-radius: 6px;">
+                <strong>Method 2: With metadata</strong><br>
+                <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px;">> [!note] (style:your-style-name)</code>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">\u{1F4D0} Layout Systems</h3>
+            <p style="margin: 0 0 0.5rem 0; font-size: 0.9em;"><strong>1. Inline Grid (Simple):</strong> Quick alignments using <code style="background: var(--background-modifier-border); padding: 2px 4px; border-radius: 3px;">(position:cols)</code></p>
+            <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px; display: block; margin-bottom: 1rem;">> [!multi-callout]<br>> > [!info] (1:2)<br>> > [!tip] (2:2)</code>
+            
+            <p style="margin: 0 0 0.5rem 0; font-size: 0.9em;"><strong>2. Visual Layout Builder (Advanced):</strong> Create Excel-like merged grids in settings, then use their name!</p>
+            <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px; display: block;">> [!multi-callout] (my_dashboard)<br>> > [!info]<br>> > [!tip]</code>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">\u{1F4A1} Pro Tips</h3>
+            <ul style="margin: 0; padding-left: 1.5rem;">
+                <li style="margin-bottom: 0.5rem;">Use <code style="background: var(--background-modifier-border); padding: 2px 4px; border-radius: 3px;">(title:red)</code> to override title color</li>
+                <li style="margin-bottom: 0.5rem;">Try <code style="background: var(--background-modifier-border); padding: 2px 4px; border-radius: 3px;">(no-icon)</code> for a minimalist look</li>
+                <li>Click "Metadata Reference" to see all available parameters</li>
+            </ul>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #667eea 15%, #764ba2 85%); padding: 1rem; border-radius: 6px; color: white;">
+            <strong>\u26A1 Quick Tip:</strong> Assign hotkeys to your favorite styles in Settings \u2192 Hotkeys \u2192 Special Callouts
+        </div>
+    `;
+  const closeBtn = modal.createEl("button", { text: "Got it!" });
+  closeBtn.style.cssText = "margin-top: 1.5rem; padding: 0.6rem 1.5rem; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; width: 100%;";
+  closeBtn.onclick = () => {
+    modal.remove();
+    overlay.remove();
+  };
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 9999;";
+  overlay.onclick = () => {
+    modal.remove();
+    overlay.remove();
+  };
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+}
+
+// src/modals/IconPickerModal.ts
+var import_obsidian2 = require("obsidian");
+var IconPickerModal = class extends import_obsidian2.FuzzySuggestModal {
+  constructor(app, onChoose) {
+    super(app);
+    this.onChoose = onChoose;
+    this.setPlaceholder("Search for an icon... (e.g. star, pencil, flame)");
+  }
+  getItems() {
+    return (0, import_obsidian2.getIconIds)();
+  }
+  getItemText(icon) {
+    return icon;
+  }
+  renderSuggestion(match, el) {
+    const icon = match.item;
+    el.addClass("mod-icon-item");
+    el.style.display = "flex";
+    el.style.alignItems = "center";
+    el.style.gap = "12px";
+    el.style.padding = "8px 12px";
+    const iconContainer = el.createDiv();
+    iconContainer.style.width = "24px";
+    iconContainer.style.height = "24px";
+    iconContainer.style.display = "flex";
+    iconContainer.style.alignItems = "center";
+    iconContainer.style.justifyContent = "center";
+    iconContainer.style.color = "var(--text-muted)";
+    (0, import_obsidian2.setIcon)(iconContainer, icon);
+    const textDiv = el.createDiv({ text: icon });
+    textDiv.style.fontSize = "0.9rem";
+  }
+  onChooseItem(icon, evt) {
+    this.onChoose(icon);
+  }
+};
+
+// src/settings/SettingsTab.ts
+var SpecialCalloutsSettingTab = class extends import_obsidian3.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
+    // Form state
     this.tempName = "";
     this.tempIcon = "pencil";
     this.tempBg = "#3498db";
     this.tempBorder = "#3498db";
     this.tempText = "#ffffff";
     this.tempLink = "#dfe4ea";
+    this.tempTitleColor = "#3498db";
+    this.tempBoldBorder = false;
+    this.tempFont = "";
+    // Default (empty)
+    this.tempFontSize = 3;
+    // Default size
+    this.tempBorderWidth = "";
+    this.tempBorderStyle = "solid";
+    this.tempBorderRadius = "";
+    this.tempNeon = "";
+    this.tempNoIcon = false;
+    this.tempCompact = false;
+    this.tempCenter = false;
+    this.tempTitleCenter = false;
     this.newCustomColorName = "";
     this.newCustomColorHex = "#ffffff";
+    this.editingIndex = null;
+    // View modes
+    this.stylesViewMode = "grid";
+    this.standardStylesViewMode = "list";
+    this.standardColorsViewMode = "grid";
+    this.customColorsViewMode = "grid";
     this.plugin = plugin;
   }
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h1", { text: "Special Callouts" });
-    const standardSection = containerEl.createEl("details");
-    standardSection.open = false;
-    standardSection.createEl("summary", { text: "Standard Colors" });
-    const standardDesc = standardSection.createEl("p");
-    standardDesc.style.fontSize = "12px";
-    standardDesc.style.color = "var(--text-muted)";
-    standardDesc.setText("Edit the hex values for built-in color names.");
+    this.createHeader(containerEl);
+    this.createQuickActions(containerEl);
+    this.createLayoutBuilderSection(containerEl);
+    this.createCalloutsSection(containerEl);
+    this.createColorsSection(containerEl);
+  }
+  createHeader(container) {
+    const header = container.createDiv();
+    header.style.cssText = "margin-bottom: 2rem;";
+    const title = header.createEl("h1", { text: "Special Callouts" });
+    title.style.cssText = `
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        `;
+    const subtitle = header.createEl("p", { text: "Customize your callout styles with precision" });
+    subtitle.style.cssText = `
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin: 0 0 1.5rem 0;
+        `;
+  }
+  createQuickActions(container) {
+    const quickRefDiv = container.createDiv();
+    quickRefDiv.style.cssText = "display: flex; gap: 10px; margin-bottom: 2rem;";
+    const howToBtn = quickRefDiv.createEl("button");
+    howToBtn.style.cssText = "padding: 10px 20px; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: opacity 0.15s;";
+    howToBtn.onmouseover = () => howToBtn.style.opacity = "0.85";
+    howToBtn.onmouseout = () => howToBtn.style.opacity = "1";
+    (0, import_obsidian3.setIcon)(howToBtn.createSpan(), "help-circle");
+    howToBtn.createSpan({ text: "How to Use" });
+    howToBtn.onclick = () => showHowToUse();
+    const metadataBtn = quickRefDiv.createEl("button");
+    metadataBtn.style.cssText = "padding: 10px 20px; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: opacity 0.15s;";
+    metadataBtn.onmouseover = () => metadataBtn.style.opacity = "0.85";
+    metadataBtn.onmouseout = () => metadataBtn.style.opacity = "1";
+    (0, import_obsidian3.setIcon)(metadataBtn.createSpan(), "list");
+    metadataBtn.createSpan({ text: "Metadata Reference" });
+    metadataBtn.onclick = () => showMetadataReference();
+  }
+  createCalloutsSection(container) {
+    const section = container.createDiv();
+    section.style.cssText = "margin-bottom: 2.5rem;";
+    const h1 = section.createEl("h1", { text: "Callouts" });
+    h1.style.cssText = `
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-accent);
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--background-modifier-border);
+        `;
+    this.createCustomStylesSection(section);
+    this.createStandardStylesSection(section);
+  }
+  createColorsSection(container) {
+    const section = container.createDiv();
+    section.style.cssText = "margin-bottom: 2.5rem;";
+    const h1 = section.createEl("h1", { text: "Colors" });
+    h1.style.cssText = `
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-accent);
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--background-modifier-border);
+        `;
+    this.createStandardColorsSection(section);
+    this.createCustomColorsSection(section);
+  }
+  createLayoutBuilderSection(container) {
+    const section = container.createDiv();
+    section.style.cssText = "margin-bottom: 2.5rem;";
+    const h1 = section.createEl("h1", { text: "Visual Layout Builder (Interactive)" });
+    h1.style.cssText = `
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-accent);
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--background-modifier-border);
+        `;
+    const desc = section.createEl("p", { text: "Drag to select cells, then click Merge or Split. Use layouts by typing their name in the callout metadata. e.g. > [!multi-callout] (my_dashboard)." });
+    desc.style.cssText = "color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;";
+    const builderCard = section.createDiv();
+    builderCard.style.cssText = `
+            padding: 20px;
+            border: 1px solid var(--background-modifier-border);
+            border-radius: 8px;
+            background: var(--background-secondary);
+            margin-bottom: 20px;
+        `;
+    let cols = 3;
+    let rows = 2;
+    let layoutName = "";
+    let gridMatrix = [];
+    let selectedCells = [];
+    let isDragging = false;
+    let dragStart = null;
+    const initMatrix = () => {
+      gridMatrix = [];
+      let nextId = 1;
+      for (let r = 0; r < rows; r++) {
+        let row = [];
+        for (let c = 0; c < cols; c++) {
+          row.push(nextId++);
+        }
+        gridMatrix.push(row);
+      }
+    };
+    initMatrix();
+    const normalizeMatrix = () => {
+      let currentId = 1;
+      let oldToNew = /* @__PURE__ */ new Map();
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const oldId = gridMatrix[r][c];
+          if (!oldToNew.has(oldId)) {
+            oldToNew.set(oldId, currentId++);
+          }
+          gridMatrix[r][c] = oldToNew.get(oldId);
+        }
+      }
+    };
+    const controlsRow = builderCard.createDiv();
+    controlsRow.style.cssText = "display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap;";
+    const nameGroup = controlsRow.createDiv();
+    nameGroup.createEl("label", { text: "Layout Name" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;";
+    const nameInput = nameGroup.createEl("input", { type: "text", placeholder: "my_dashboard" });
+    nameInput.style.cssText = "padding: 6px 10px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: var(--background-primary); width: 150px;";
+    nameInput.oninput = (e) => layoutName = e.target.value;
+    const colsGroup = controlsRow.createDiv();
+    colsGroup.createEl("label", { text: "Columns" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;";
+    const colsSelect = new import_obsidian3.DropdownComponent(colsGroup);
+    [1, 2, 3, 4, 5, 6, 7, 8].forEach((n) => colsSelect.addOption(n.toString(), n.toString()));
+    colsSelect.setValue("3");
+    const rowsGroup = controlsRow.createDiv();
+    rowsGroup.createEl("label", { text: "Rows" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;";
+    const rowsSelect = new import_obsidian3.DropdownComponent(rowsGroup);
+    [1, 2, 3, 4, 5, 6, 7, 8].forEach((n) => rowsSelect.addOption(n.toString(), n.toString()));
+    rowsSelect.setValue("2");
+    const actionGroup = controlsRow.createDiv();
+    actionGroup.style.cssText = "display: flex; gap: 10px; margin-left: auto;";
+    const mergeBtn = actionGroup.createEl("button");
+    mergeBtn.style.cssText = "padding: 6px 12px; background: var(--interactive-accent); color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;";
+    (0, import_obsidian3.setIcon)(mergeBtn.createSpan(), "combine");
+    mergeBtn.createSpan({ text: "Merge" });
+    mergeBtn.onclick = () => {
+      if (selectedCells.length < 2) return;
+      const minR = Math.min(...selectedCells.map((s) => s.r));
+      const maxR = Math.max(...selectedCells.map((s) => s.r));
+      const minC = Math.min(...selectedCells.map((s) => s.c));
+      const maxC = Math.max(...selectedCells.map((s) => s.c));
+      let isRect = true;
+      let expectedCount = (maxR - minR + 1) * (maxC - minC + 1);
+      if (selectedCells.length !== expectedCount) {
+      }
+      const targetId = gridMatrix[minR][minC];
+      for (let r = minR; r <= maxR; r++) {
+        for (let c = minC; c <= maxC; c++) {
+          gridMatrix[r][c] = targetId;
+        }
+      }
+      normalizeMatrix();
+      selectedCells = [];
+      drawGrid();
+    };
+    const splitBtn = actionGroup.createEl("button");
+    splitBtn.style.cssText = "padding: 6px 12px; background: var(--background-modifier-error); color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;";
+    (0, import_obsidian3.setIcon)(splitBtn.createSpan(), "scissors");
+    splitBtn.createSpan({ text: "Split" });
+    splitBtn.onclick = () => {
+      if (selectedCells.length === 0) return;
+      let maxExisting = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (gridMatrix[r][c] > maxExisting) maxExisting = gridMatrix[r][c];
+        }
+      }
+      selectedCells.forEach((s) => {
+        const currentId = gridMatrix[s.r][s.c];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (gridMatrix[r][c] === currentId) {
+              gridMatrix[r][c] = ++maxExisting;
+            }
+          }
+        }
+      });
+      normalizeMatrix();
+      selectedCells = [];
+      drawGrid();
+    };
+    const gridContainer = builderCard.createDiv();
+    const updateSelectionVisuals = () => {
+      const children = Array.from(gridContainer.children);
+      children.forEach((cell) => {
+        const id = parseInt(cell.getAttribute("data-id") || "0");
+        const isSelected = selectedCells.some((s) => {
+          var _a;
+          return ((_a = gridMatrix[s.r]) == null ? void 0 : _a[s.c]) === id;
+        });
+        if (isSelected) {
+          cell.style.background = "var(--interactive-accent)";
+          cell.style.borderColor = "var(--text-accent)";
+          cell.style.color = "white";
+          cell.style.transform = "scale(0.98)";
+        } else {
+          cell.style.background = "var(--background-secondary)";
+          cell.style.borderColor = "var(--background-modifier-border)";
+          cell.style.color = "var(--text-normal)";
+          cell.style.transform = "scale(1)";
+        }
+      });
+    };
+    const drawGrid = () => {
+      var _a;
+      gridContainer.empty();
+      gridContainer.style.cssText = `
+                display: grid;
+                grid-template-columns: repeat(${cols}, 1fr);
+                grid-template-rows: repeat(${rows}, 80px);
+                gap: 8px;
+                background: var(--background-primary);
+                padding: 15px;
+                border-radius: 8px;
+                border: 1px dashed var(--background-modifier-border);
+                user-select: none;
+            `;
+      const processed = /* @__PURE__ */ new Set();
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const id = (_a = gridMatrix[r]) == null ? void 0 : _a[c];
+          if (id === void 0 || processed.has(id)) continue;
+          processed.add(id);
+          let maxR = r, maxC = c;
+          for (let tr = r; tr < rows; tr++) {
+            if (gridMatrix[tr][c] === id) maxR = tr;
+            else break;
+          }
+          for (let tc = c; tc < cols; tc++) {
+            if (gridMatrix[r][tc] === id) maxC = tc;
+            else break;
+          }
+          const cell = gridContainer.createDiv();
+          cell.setAttribute("data-id", id.toString());
+          cell.style.cssText = `
+                        grid-row-start: ${r + 1};
+                        grid-row-end: ${maxR + 2};
+                        grid-column-start: ${c + 1};
+                        grid-column-end: ${maxC + 2};
+                        border: 2px solid var(--background-modifier-border);
+                        border-radius: 6px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        font-weight: bold;
+                        font-size: 1.5rem;
+                        box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+                    `;
+          cell.createSpan({ text: `${id}` });
+          const subtitle = cell.createSpan({ text: `Callout ${id}` });
+          subtitle.style.cssText = "font-size: 0.7rem; opacity: 0.7; font-weight: normal; margin-top: 4px; pointer-events: none;";
+          cell.onmousedown = (e) => {
+            isDragging = true;
+            dragStart = { r, c };
+            selectedCells = [];
+            for (let br = r; br <= maxR; br++) {
+              for (let bc = c; bc <= maxC; bc++) {
+                selectedCells.push({ r: br, c: bc });
+              }
+            }
+            updateSelectionVisuals();
+          };
+          cell.onmouseenter = (e) => {
+            if (isDragging && dragStart) {
+              const minRow = Math.min(dragStart.r, r);
+              const maxRow = Math.max(dragStart.r, maxR);
+              const minCol = Math.min(dragStart.c, c);
+              const maxCol = Math.max(dragStart.c, maxC);
+              selectedCells = [];
+              for (let tr = minRow; tr <= maxRow; tr++) {
+                for (let tc = minCol; tc <= maxCol; tc++) {
+                  selectedCells.push({ r: tr, c: tc });
+                }
+              }
+              updateSelectionVisuals();
+            }
+          };
+        }
+      }
+      updateSelectionVisuals();
+    };
+    const documentMouseUpListener = () => {
+      isDragging = false;
+    };
+    document.addEventListener("mouseup", documentMouseUpListener);
+    colsSelect.onChange((v) => {
+      cols = parseInt(v);
+      initMatrix();
+      drawGrid();
+    });
+    rowsSelect.onChange((v) => {
+      rows = parseInt(v);
+      initMatrix();
+      drawGrid();
+    });
+    drawGrid();
+    const saveBtnRow = builderCard.createDiv();
+    saveBtnRow.style.cssText = "margin-top: 20px; display: flex; justify-content: flex-end;";
+    const saveBtn = saveBtnRow.createEl("button", { text: "Save Layout" });
+    saveBtn.style.cssText = "padding: 8px 16px; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;";
+    saveBtn.onclick = async () => {
+      if (!layoutName) {
+        new import_obsidian3.Notice("Please enter a layout name");
+        return;
+      }
+      if (!this.plugin.settings.customLayouts) {
+        this.plugin.settings.customLayouts = [];
+      }
+      const existingIdx = this.plugin.settings.customLayouts.findIndex((l) => l.name === layoutName.toLowerCase().replace(/\s+/g, "_"));
+      let gridAreasStr = "";
+      for (let r = 0; r < rows; r++) {
+        let rowStr = "";
+        for (let c = 0; c < cols; c++) {
+          rowStr += `area${gridMatrix[r][c]} `;
+        }
+        gridAreasStr += `"${rowStr.trim()}" `;
+      }
+      const newLayout = {
+        name: layoutName.toLowerCase().replace(/\s+/g, "_"),
+        cols,
+        rows,
+        gridAreas: gridAreasStr.trim()
+      };
+      if (existingIdx >= 0) {
+        this.plugin.settings.customLayouts[existingIdx] = newLayout;
+        new import_obsidian3.Notice("Layout updated!");
+      } else {
+        this.plugin.settings.customLayouts.push(newLayout);
+        new import_obsidian3.Notice("Layout saved!");
+      }
+      await this.plugin.saveSettings();
+      this.display();
+    };
+    if (this.plugin.settings.customLayouts && this.plugin.settings.customLayouts.length > 0) {
+      const listDiv = section.createDiv();
+      listDiv.createEl("h3", { text: "Saved Layouts" }).style.cssText = "font-size: 1.1rem; margin-bottom: 10px;";
+      const grid = listDiv.createDiv();
+      grid.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;";
+      this.plugin.settings.customLayouts.forEach((layout, idx) => {
+        const card = grid.createDiv();
+        card.style.cssText = "padding: 12px; background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;";
+        const info = card.createDiv();
+        info.createDiv({ text: layout.name }).style.fontWeight = "bold";
+        info.createDiv({ text: `${layout.cols}x${layout.rows} Grid` }).style.cssText = "font-size: 0.8rem; color: var(--text-muted);";
+        const actionBtns = card.createDiv();
+        actionBtns.style.cssText = "display: flex; gap: 5px;";
+        const editBtn = actionBtns.createEl("button");
+        (0, import_obsidian3.setIcon)(editBtn, "pencil");
+        editBtn.style.cssText = "background: transparent; border: none; cursor: pointer; color: var(--text-accent); padding: 4px;";
+        editBtn.title = "Edit Layout";
+        editBtn.onclick = () => {
+          var _a;
+          cols = layout.cols;
+          rows = layout.rows;
+          layoutName = layout.name;
+          colsSelect.setValue(cols.toString());
+          rowsSelect.setValue(rows.toString());
+          nameInput.value = layoutName;
+          const rowsArr = ((_a = layout.gridAreas.match(/"([^"]+)"/g)) == null ? void 0 : _a.map((r) => r.replace(/"/g, "").trim().split(/\s+/))) || [];
+          if (rowsArr.length === rows) {
+            gridMatrix = rowsArr.map((row) => row.map((area) => parseInt(area.replace("area", ""))));
+          } else {
+            initMatrix();
+          }
+          drawGrid();
+          new import_obsidian3.Notice(`Editing layout: ${layoutName}`);
+          builderCard.scrollIntoView({ behavior: "smooth" });
+        };
+        const delBtn = actionBtns.createEl("button");
+        (0, import_obsidian3.setIcon)(delBtn, "trash");
+        delBtn.style.cssText = "background: transparent; border: none; cursor: pointer; color: var(--text-error); padding: 4px;";
+        delBtn.title = "Delete Layout";
+        delBtn.onclick = async () => {
+          this.plugin.settings.customLayouts.splice(idx, 1);
+          await this.plugin.saveSettings();
+          this.display();
+        };
+      });
+    }
+  }
+  createStandardStylesSection(container) {
+    const section = container.createDiv();
+    section.style.cssText = "margin-bottom: 1.5rem;";
+    const sectionHeader = section.createDiv();
+    sectionHeader.style.cssText = "margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;";
+    sectionHeader.createEl("h2", { text: "Standard Callouts" }).style.cssText = `
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-muted);
+        `;
+    const toggleDiv = sectionHeader.createDiv();
+    toggleDiv.style.cssText = "display: flex; border: 1px solid var(--background-modifier-border); border-radius: 6px; overflow: hidden;";
+    const gridBtn = toggleDiv.createEl("button", { text: "Grid" });
+    gridBtn.style.cssText = `padding: 4px 10px; border: none; cursor: pointer; font-size: 0.8rem; ${this.standardStylesViewMode === "grid" ? "background: var(--interactive-accent); color: white;" : "background: var(--background-secondary); color: var(--text-muted);"}`;
+    gridBtn.onclick = () => {
+      this.standardStylesViewMode = "grid";
+      this.display();
+    };
+    const listBtn = toggleDiv.createEl("button", { text: "List" });
+    listBtn.style.cssText = `padding: 4px 10px; border: none; cursor: pointer; font-size: 0.8rem; ${this.standardStylesViewMode === "list" ? "background: var(--interactive-accent); color: white;" : "background: var(--background-secondary); color: var(--text-muted);"}`;
+    listBtn.onclick = () => {
+      this.standardStylesViewMode = "list";
+      this.display();
+    };
+    const standardStyleNames = Object.keys(this.plugin.settings.standardStyles);
+    if (this.standardStylesViewMode === "list") {
+      this.renderStandardStylesList(section, standardStyleNames);
+    } else {
+      this.renderStandardStylesGrid(section, standardStyleNames);
+    }
+  }
+  renderStandardStylesList(section, styleNames) {
+    const list = section.createDiv();
+    list.style.cssText = "display: flex; flex-direction: column; gap: 4px;";
+    styleNames.forEach((styleName) => {
+      const style = this.plugin.settings.standardStyles[styleName];
+      const defaultStyle = DEFAULT_STANDARD_STYLES[styleName];
+      const isModified = style.bg !== defaultStyle.bg || style.text !== defaultStyle.text || style.titleColor !== defaultStyle.titleColor;
+      const row = list.createDiv();
+      row.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 14px;
+                background: var(--background-secondary);
+                border: 1px solid var(--background-modifier-border);
+                border-radius: 8px;
+                transition: all 0.15s ease;
+            `;
+      row.onmouseover = () => row.style.borderColor = "var(--interactive-accent)";
+      row.onmouseout = () => row.style.borderColor = "var(--background-modifier-border)";
+      const colorBar = row.createDiv();
+      colorBar.style.cssText = `width: 4px; height: 24px; border-radius: 2px; background: ${style.bg};`;
+      const iconSpan = row.createSpan();
+      iconSpan.style.cssText = `color: ${style.bg}; display: flex; align-items: center;`;
+      (0, import_obsidian3.setIcon)(iconSpan, style.icon || "file");
+      const nameSpan = row.createSpan({ text: styleName.charAt(0).toUpperCase() + styleName.slice(1) });
+      nameSpan.style.cssText = `flex: 1; font-weight: 500; color: ${style.bg}; font-size: 0.95rem;`;
+      if (isModified) {
+        const modBadge = row.createSpan({ text: "\xE2\u2014\x8F" });
+        modBadge.style.cssText = "color: var(--text-accent); font-size: 0.6rem;";
+        modBadge.title = "Modified";
+      }
+      const editBtn = row.createEl("button");
+      editBtn.style.cssText = "padding: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; display: flex;";
+      (0, import_obsidian3.setIcon)(editBtn, "pencil");
+      editBtn.title = "Edit";
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.openStandardStyleEditor(styleName);
+      };
+      if (isModified) {
+        const resetBtn = row.createEl("button");
+        resetBtn.style.cssText = "padding: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; display: flex;";
+        (0, import_obsidian3.setIcon)(resetBtn, "rotate-ccw");
+        resetBtn.title = "Reset";
+        resetBtn.onclick = async (e) => {
+          e.stopPropagation();
+          this.plugin.settings.standardStyles[styleName] = { ...DEFAULT_STANDARD_STYLES[styleName] };
+          await this.plugin.saveSettings();
+          this.display();
+        };
+      }
+    });
+  }
+  renderStandardStylesGrid(section, styleNames) {
+    const grid = section.createDiv();
+    grid.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;";
+    styleNames.forEach((styleName) => {
+      const style = this.plugin.settings.standardStyles[styleName];
+      const defaultStyle = DEFAULT_STANDARD_STYLES[styleName];
+      const isModified = style.bg !== defaultStyle.bg || style.text !== defaultStyle.text || style.titleColor !== defaultStyle.titleColor;
+      const card = grid.createDiv();
+      card.style.cssText = `
+                background: var(--background-secondary);
+                border: 1px solid var(--background-modifier-border);
+                border-radius: 8px;
+                padding: 12px;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                text-align: center;
+            `;
+      card.onmouseover = () => {
+        card.style.borderColor = "var(--interactive-accent)";
+        card.style.transform = "translateY(-2px)";
+      };
+      card.onmouseout = () => {
+        card.style.borderColor = "var(--background-modifier-border)";
+        card.style.transform = "translateY(0)";
+      };
+      card.onclick = () => this.openStandardStyleEditor(styleName);
+      const iconDiv = card.createDiv();
+      iconDiv.style.cssText = `color: ${style.bg}; margin-bottom: 8px; display: flex; justify-content: center;`;
+      (0, import_obsidian3.setIcon)(iconDiv, style.icon || "file");
+      const nameDiv = card.createDiv({ text: styleName.charAt(0).toUpperCase() + styleName.slice(1) });
+      nameDiv.style.cssText = `font-weight: 500; color: ${style.bg}; font-size: 0.85rem;`;
+      if (isModified) {
+        const modDot = card.createDiv({ text: "\xE2\u2014\x8F" });
+        modDot.style.cssText = "color: var(--text-accent); font-size: 0.5rem; margin-top: 4px;";
+      }
+    });
+  }
+  openStandardStyleEditor(styleName) {
+    const style = this.plugin.settings.standardStyles[styleName];
+    if (!style) return;
+    const modal = document.createElement("div");
+    modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--background-primary);
+            border: 1px solid var(--background-modifier-border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 450px;
+            width: 90%;
+            z-index: 10000;
+            box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5);
+        `;
+    modal.createEl("h3", { text: `Edit "${styleName}" Style` }).style.cssText = "margin: 0 0 1.5rem 0;";
+    const previewDiv = modal.createDiv();
+    previewDiv.style.cssText = `
+            background: color-mix(in srgb, ${style.bg} 15%, transparent);
+            border-left: 4px solid ${style.bg};
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 1.5rem;
+        `;
+    previewDiv.innerHTML = `<strong style="color: ${style.titleColor || style.bg}">${style.name}</strong><br><span style="color: ${style.text || "var(--text-normal)"}">Preview text content</span>`;
+    const updatePreview = () => {
+      previewDiv.style.background = `color-mix(in srgb, ${style.bg} 15%, transparent)`;
+      previewDiv.style.borderLeftColor = style.bg;
+      previewDiv.innerHTML = `<strong style="color: ${style.titleColor || style.bg}">${style.name}</strong><br><span style="color: ${style.text || "var(--text-normal)"}">Preview text content</span>`;
+    };
+    const bgRow = modal.createDiv();
+    bgRow.style.cssText = "display: flex; align-items: center; gap: 10px; margin-bottom: 12px;";
+    bgRow.createEl("label", { text: "Background:" }).style.cssText = "width: 100px; font-size: 0.9rem;";
+    const bgInput = bgRow.createEl("input", { type: "color", value: style.bg });
+    bgInput.style.cssText = "width: 40px; height: 30px; border: none; cursor: pointer;";
+    bgInput.oninput = () => {
+      style.bg = bgInput.value;
+      style.border = bgInput.value;
+      updatePreview();
+    };
+    const titleRow = modal.createDiv();
+    titleRow.style.cssText = "display: flex; align-items: center; gap: 10px; margin-bottom: 12px;";
+    titleRow.createEl("label", { text: "Title Color:" }).style.cssText = "width: 100px; font-size: 0.9rem;";
+    const titleInput = titleRow.createEl("input", { type: "color", value: style.titleColor || style.bg });
+    titleInput.style.cssText = "width: 40px; height: 30px; border: none; cursor: pointer;";
+    titleInput.oninput = () => {
+      style.titleColor = titleInput.value;
+      updatePreview();
+    };
+    const textRow = modal.createDiv();
+    textRow.style.cssText = "display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;";
+    textRow.createEl("label", { text: "Text Color:" }).style.cssText = "width: 100px; font-size: 0.9rem;";
+    const textInput = textRow.createEl("input", { type: "color", value: style.text || "#ffffff" });
+    textInput.style.cssText = "width: 40px; height: 30px; border: none; cursor: pointer;";
+    textInput.oninput = () => {
+      style.text = textInput.value;
+      updatePreview();
+    };
+    const buttons = modal.createDiv();
+    buttons.style.cssText = "display: flex; gap: 10px;";
+    const saveBtn = buttons.createEl("button", { text: "Save" });
+    saveBtn.style.cssText = "flex: 1; padding: 10px; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;";
+    saveBtn.onclick = async () => {
+      this.plugin.settings.standardStyles[styleName] = style;
+      await this.plugin.saveSettings();
+      modal.remove();
+      overlay.remove();
+      this.display();
+    };
+    const resetBtn = buttons.createEl("button", { text: "Reset" });
+    resetBtn.style.cssText = "padding: 10px 20px; background: var(--background-modifier-error); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;";
+    resetBtn.onclick = async () => {
+      this.plugin.settings.standardStyles[styleName] = { ...DEFAULT_STANDARD_STYLES[styleName] };
+      await this.plugin.saveSettings();
+      modal.remove();
+      overlay.remove();
+      this.display();
+    };
+    const cancelBtn = buttons.createEl("button", { text: "Cancel" });
+    cancelBtn.style.cssText = "padding: 10px 20px; background: var(--background-secondary); color: var(--text-normal); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer;";
+    cancelBtn.onclick = () => {
+      modal.remove();
+      overlay.remove();
+    };
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 9999;";
+    overlay.onclick = () => {
+      modal.remove();
+      overlay.remove();
+    };
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+  }
+  createCustomStylesSection(container) {
+    const section = container.createDiv();
+    section.style.cssText = "margin-bottom: 1.5rem;";
+    const sectionHeader = section.createDiv();
+    sectionHeader.style.cssText = "margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;";
+    sectionHeader.createEl("h2", { text: "Custom Callouts" }).style.cssText = `
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-muted);
+        `;
+    if (this.editingIndex !== null) {
+      const banner = section.createDiv();
+      banner.style.cssText = "background: var(--interactive-accent); color: white; padding: 10px 16px; border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;";
+      banner.createSpan({ text: `Editing: ${this.tempName || "Untitled"}` }).style.fontWeight = "500";
+      const cancelBtn = banner.createEl("button", { text: "Cancel" });
+      cancelBtn.style.cssText = "background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer;";
+      cancelBtn.onclick = () => {
+        this.editingIndex = null;
+        this.resetForm();
+        this.display();
+      };
+    }
+    const creatorCard = section.createDiv();
+    creatorCard.style.cssText = `
+            padding: 20px;
+            border: 1px solid var(--background-modifier-border);
+            border-radius: 8px;
+            background: var(--background-secondary);
+        `;
+    this.createPresetsSection(creatorCard);
+    const previewBox = this.createFormSection(creatorCard);
+    if (this.plugin.settings.customStyles.length > 0) {
+      this.createSavedStylesList(section, container);
+    }
+  }
+  createPresetsSection(creatorCard) {
+    const presetsDiv = creatorCard.createDiv();
+    presetsDiv.style.cssText = "margin-bottom: 20px;";
+    const presetsLabel = presetsDiv.createDiv();
+    presetsLabel.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 10px;";
+    presetsLabel.createEl("span", { text: "Quick Start" }).style.cssText = "font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;";
+    presetsLabel.createDiv().style.cssText = "flex: 1; height: 1px; background: var(--background-modifier-border);";
+    const presetsGrid = presetsDiv.createDiv();
+    presetsGrid.style.cssText = "display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;";
+    QUICK_START_PRESETS.forEach((preset) => {
+      const presetBtn = presetsGrid.createEl("button", { text: preset.name });
+      presetBtn.style.cssText = `
+                padding: 8px 12px;
+                background: var(--background-primary);
+                border: 1px solid var(--background-modifier-border);
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.85rem;
+                color: var(--text-normal);
+                transition: all 0.15s;
+            `;
+      presetBtn.onmouseover = () => {
+        presetBtn.style.borderColor = preset.border;
+        presetBtn.style.color = preset.border;
+      };
+      presetBtn.onmouseout = () => {
+        presetBtn.style.borderColor = "var(--background-modifier-border)";
+        presetBtn.style.color = "var(--text-normal)";
+      };
+      presetBtn.onclick = () => {
+        this.tempName = preset.name.toLowerCase() + "-style";
+        this.tempBg = preset.bg;
+        this.tempBorder = preset.border;
+        this.tempTitleColor = preset.title;
+        this.tempText = preset.text;
+        this.tempIcon = preset.icon;
+        this.display();
+      };
+    });
+    const randomBtn = presetsGrid.createEl("button");
+    randomBtn.style.cssText = `
+            padding: 8px 12px;
+            background: var(--background-primary);
+            border: 1px solid var(--interactive-accent);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-normal);
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        `;
+    (0, import_obsidian3.setIcon)(randomBtn.createSpan(), "dice");
+    randomBtn.createSpan({ text: "Random" });
+    randomBtn.onmouseover = () => {
+      randomBtn.style.background = "var(--interactive-accent)";
+      randomBtn.style.color = "white";
+    };
+    randomBtn.onmouseout = () => {
+      randomBtn.style.background = "var(--background-primary)";
+      randomBtn.style.color = "var(--text-normal)";
+    };
+    randomBtn.onclick = () => {
+      this.applyRandomStyle();
+      this.display();
+    };
+  }
+  createFormSection(creatorCard) {
+    const previewLabel = creatorCard.createDiv();
+    previewLabel.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 8px;";
+    previewLabel.createEl("span", { text: "Live Preview" }).style.cssText = "font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;";
+    previewLabel.createDiv().style.cssText = "flex: 1; height: 1px; background: var(--background-modifier-border);";
+    const previewBox = creatorCard.createDiv({ cls: "callout" });
+    previewBox.style.cssText = "margin-bottom: 24px; min-height: 100px; transition: all 0.2s ease;";
+    const gridContainer = creatorCard.createDiv();
+    gridContainer.style.cssText = "display: grid; grid-template-columns: 1fr 1fr; gap: 24px;";
+    const leftCol = gridContainer.createDiv();
+    leftCol.style.cssText = "display: flex; flex-direction: column; gap: 20px;";
+    const rightCol = gridContainer.createDiv();
+    rightCol.style.cssText = "display: flex; flex-direction: column; gap: 20px;";
+    const identityPanel = leftCol.createDiv();
+    this.createPanelHeader(identityPanel, "Identity");
+    const identityGrid = identityPanel.createDiv();
+    identityGrid.style.cssText = "display: grid; grid-template-columns: 2fr 1fr; gap: 12px;";
+    const nameGroup = identityGrid.createDiv();
+    nameGroup.createEl("label", { text: "Style Name" }).style.cssText = "display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;";
+    const nameInput = nameGroup.createEl("input", { type: "text", placeholder: "my-style" });
+    nameInput.style.cssText = "width: 100%; padding: 6px 10px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: var(--background-primary);";
+    nameInput.value = this.tempName;
+    nameInput.oninput = () => {
+      this.tempName = nameInput.value;
+      this.updatePreview(previewBox);
+    };
+    const iconGroup = identityGrid.createDiv();
+    iconGroup.createEl("label", { text: "Icon" }).style.cssText = "display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;";
+    const iconWrapper = iconGroup.createDiv();
+    iconWrapper.style.cssText = "display: flex; gap: 6px;";
+    const iconInput = iconWrapper.createEl("input", { type: "text" });
+    iconInput.style.cssText = "flex: 1; min-width: 0; padding: 6px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: var(--background-primary);";
+    iconInput.value = this.tempIcon;
+    iconInput.oninput = () => {
+      this.tempIcon = iconInput.value;
+      this.updatePreview(previewBox);
+    };
+    const iconSearchBtn = iconWrapper.createEl("button");
+    iconSearchBtn.style.cssText = "padding: 0 8px; cursor: pointer; border-radius: 4px; border: 1px solid var(--background-modifier-border); background: var(--interactive-normal);";
+    (0, import_obsidian3.setIcon)(iconSearchBtn, "search");
+    iconSearchBtn.onclick = () => {
+      new IconPickerModal(this.app, (selected) => {
+        this.tempIcon = selected;
+        iconInput.value = selected;
+        this.updatePreview(previewBox);
+      }).open();
+    };
+    const colorsPanel = leftCol.createDiv();
+    this.createPanelHeader(colorsPanel, "Palette");
+    const colorsGrid = colorsPanel.createDiv();
+    colorsGrid.style.cssText = "display: flex; flex-direction: column; gap: 12px;";
+    const colorConfigs = [
+      { label: "Background", val: () => this.tempBg, set: (v) => this.tempBg = v },
+      { label: "Border", val: () => this.tempBorder, set: (v) => this.tempBorder = v },
+      { label: "Title", val: () => this.tempTitleColor, set: (v) => this.tempTitleColor = v },
+      { label: "Text", val: () => this.tempText, set: (v) => this.tempText = v },
+      { label: "Link", val: () => this.tempLink, set: (v) => this.tempLink = v }
+    ];
+    colorConfigs.forEach((c) => {
+      const row = colorsGrid.createDiv();
+      row.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 10px;";
+      row.createEl("label", { text: c.label }).style.cssText = "font-size: 0.8rem; color: var(--text-normal); flex: 1;";
+      const hexInput = row.createEl("input", { type: "text" });
+      hexInput.style.cssText = "width: 70px; padding: 2px 4px; border: none; background: transparent; font-family: monospace; font-size: 0.8rem; text-align: right; color: var(--text-muted);";
+      hexInput.value = c.val().toUpperCase();
+      const wrapper = row.createDiv();
+      wrapper.style.cssText = "position: relative; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; border: 1px solid var(--background-modifier-border);";
+      const picker = wrapper.createEl("input", { type: "color" });
+      picker.style.cssText = "opacity: 0; width: 100%; height: 100%; cursor: pointer; position: absolute; top:0; left:0;";
+      picker.value = c.val();
+      const display = wrapper.createDiv();
+      display.style.cssText = `width: 100%; height: 100%; background: ${c.val()}; pointer-events: none;`;
+      picker.oninput = (e) => {
+        c.set(e.target.value);
+        display.style.background = e.target.value;
+        hexInput.value = e.target.value.toUpperCase();
+        this.updatePreview(previewBox);
+      };
+      hexInput.onchange = (e) => {
+        let v = e.target.value;
+        if (!v.startsWith("#")) v = "#" + v;
+        if (isValidHex(v)) {
+          v = normalizeHex(v);
+          c.set(v);
+          picker.value = v;
+          display.style.background = v;
+          this.updatePreview(previewBox);
+        } else {
+          hexInput.value = c.val().toUpperCase();
+        }
+      };
+      wrapper.appendChild(display);
+      wrapper.appendChild(picker);
+    });
+    const effectsPanel = leftCol.createDiv();
+    this.createPanelHeader(effectsPanel, "Effects");
+    const neonRow = effectsPanel.createDiv();
+    neonRow.style.cssText = "display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;";
+    const neonLabel = neonRow.createDiv();
+    neonLabel.createDiv({ text: "Neon Glow" }).style.cssText = "font-size: 0.8rem; font-weight: 500;";
+    const neonControls = neonRow.createDiv();
+    neonControls.style.cssText = "display: flex; align-items: center; gap: 8px;";
+    const neonPicker = neonControls.createEl("input", { type: "color" });
+    neonPicker.style.cssText = "width: 20px; height: 20px; border: none; padding: 0; background: transparent; cursor: pointer;";
+    neonPicker.value = this.tempNeon || "#000000";
+    const neonToggle = new import_obsidian3.ToggleComponent(neonControls);
+    neonToggle.setValue(!!this.tempNeon);
+    neonToggle.onChange((val) => {
+      if (val) {
+        this.tempNeon = neonPicker.value;
+      } else {
+        this.tempNeon = "";
+      }
+      this.updatePreview(previewBox);
+    });
+    neonPicker.oninput = (e) => {
+      if (neonToggle.getValue()) {
+        this.tempNeon = e.target.value;
+        this.updatePreview(previewBox);
+      }
+    };
+    const typoPanel = rightCol.createDiv();
+    this.createPanelHeader(typoPanel, "Typography");
+    const typoGrid = typoPanel.createDiv();
+    typoGrid.style.cssText = "display: grid; grid-template-columns: 2fr 1fr; gap: 12px;";
+    const fontGroup = typoGrid.createDiv();
+    fontGroup.createEl("label", { text: "Font Family" }).style.cssText = "display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;";
+    const fontSelect = new import_obsidian3.DropdownComponent(fontGroup);
+    fontSelect.selectEl.style.width = "100%";
+    fontSelect.addOption("", "Default");
+    Object.keys(FONT_FAMILIES).forEach((f) => fontSelect.addOption(f, f.charAt(0).toUpperCase() + f.slice(1)));
+    fontSelect.setValue(this.tempFont);
+    fontSelect.onChange((val) => {
+      this.tempFont = val;
+      this.updatePreview(previewBox);
+    });
+    const sizeGroup = typoGrid.createDiv();
+    sizeGroup.createEl("label", { text: "Size" }).style.cssText = "display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;";
+    const sizeSelect = new import_obsidian3.DropdownComponent(sizeGroup);
+    sizeSelect.selectEl.style.width = "100%";
+    Object.keys(FONT_SIZES).forEach((s) => sizeSelect.addOption(s, s));
+    sizeSelect.setValue(this.tempFontSize.toString());
+    sizeSelect.onChange((val) => {
+      this.tempFontSize = parseInt(val);
+      this.updatePreview(previewBox);
+    });
+    const structPanel = rightCol.createDiv();
+    this.createPanelHeader(structPanel, "Structure");
+    const bsRow = structPanel.createDiv();
+    bsRow.style.cssText = "margin-bottom: 12px;";
+    bsRow.createEl("label", { text: "Border Style" }).style.cssText = "display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;";
+    const bsSelect = new import_obsidian3.DropdownComponent(bsRow);
+    bsSelect.selectEl.style.width = "100%";
+    ["solid", "dashed", "dotted", "double", "groove", "ridge", "inset", "outset", "none"].forEach((s) => bsSelect.addOption(s, s));
+    bsSelect.setValue(this.tempBorderStyle || "solid");
+    bsSelect.onChange((val) => {
+      this.tempBorderStyle = val;
+      this.updatePreview(previewBox);
+    });
+    const createSliderRow = (label, value, setter, min, max, step) => {
+      const row = structPanel.createDiv();
+      row.style.cssText = "margin-bottom: 12px;";
+      const header = row.createDiv();
+      header.style.cssText = "display: flex; justify-content: space-between; margin-bottom: 4px;";
+      header.createEl("label", { text: label }).style.cssText = "font-size: 0.75rem; font-weight: 600; color: var(--text-muted);";
+      const valLabel = header.createSpan({ text: value || "Default" });
+      valLabel.style.fontSize = "0.75rem";
+      const slider = new import_obsidian3.SliderComponent(row);
+      slider.sliderEl.style.width = "100%";
+      slider.setLimits(min, max, step);
+      const numVal = parseFloat(value) || 0;
+      slider.setValue(numVal);
+      slider.onChange((v) => {
+        const newVal = v === 0 ? "" : v.toString();
+        setter(newVal);
+        valLabel.setText(newVal || "Default");
+        this.updatePreview(previewBox);
+      });
+    };
+    createSliderRow("Border Thickness", this.tempBorderWidth, (v) => this.tempBorderWidth = v, 0, 20, 1);
+    createSliderRow("Corner Radius", this.tempBorderRadius, (v) => this.tempBorderRadius = v, 0, 50, 1);
+    const layoutPanel = rightCol.createDiv();
+    layoutPanel.createDiv().style.marginTop = "20px";
+    this.createPanelHeader(layoutPanel, "Layout Modes");
+    const createToggleRow = (label, value, setter) => {
+      const row = layoutPanel.createDiv();
+      row.style.cssText = "display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;";
+      row.createSpan({ text: label }).style.fontWeight = "500";
+      const t = new import_obsidian3.ToggleComponent(row);
+      t.setValue(value);
+      t.onChange((v) => {
+        setter(v);
+        this.updatePreview(previewBox);
+      });
+    };
+    createToggleRow("Compact Mode", this.tempCompact, (v) => this.tempCompact = v);
+    createToggleRow("Hide Icon", this.tempNoIcon, (v) => this.tempNoIcon = v);
+    const actionsContainer = creatorCard.createDiv();
+    actionsContainer.style.cssText = "margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--background-modifier-border);";
+    this.renderActionButtons(actionsContainer, previewBox);
+    this.updatePreview(previewBox);
+    return previewBox;
+  }
+  renderActionButtons(container, previewBox) {
+    const row = container.createDiv();
+    row.style.cssText = "display: flex; gap: 12px; align-items: center; justify-content: flex-end;";
+    const leftGroup = row.createDiv();
+    leftGroup.style.cssText = "margin-right: auto; display: flex; gap: 8px;";
+    const exportBtn = leftGroup.createEl("button");
+    exportBtn.style.cssText = "font-size: 0.8rem; padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;";
+    (0, import_obsidian3.setIcon)(exportBtn, "upload");
+    exportBtn.createSpan({ text: "Export" });
+    exportBtn.onclick = () => {
+      const styleData = this.getStyleFromForm();
+      navigator.clipboard.writeText(JSON.stringify(styleData, null, 2)).then(() => {
+        new import_obsidian3.Notice("Style JSON copied to clipboard!");
+      });
+    };
+    const importBtn = leftGroup.createEl("button");
+    importBtn.style.cssText = "font-size: 0.8rem; padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;";
+    (0, import_obsidian3.setIcon)(importBtn, "download");
+    importBtn.createSpan({ text: "Import" });
+    importBtn.onclick = () => {
+      new ImportStyleModal(this.app, this.plugin.settings, (imported) => {
+        this.loadStyleToForm(imported);
+        this.updatePreview(previewBox);
+        new import_obsidian3.Notice("Imported!");
+      }).open();
+    };
+    const cancelBtn = row.createEl("button", { text: "Reset" });
+    cancelBtn.onclick = () => {
+      this.resetForm();
+      this.editingIndex = null;
+      this.updatePreview(previewBox);
+      this.display();
+    };
+    const saveBtn = row.createEl("button", { text: this.editingIndex !== null ? "Update Style" : "Create Style" });
+    saveBtn.style.cssText = "background: var(--interactive-accent); color: white; border: none; padding: 8px 24px; border-radius: 4px; font-weight: 600; cursor: pointer;";
+    saveBtn.onclick = async () => {
+      await this.saveCurrentStyle();
+      this.resetForm();
+      this.display();
+    };
+  }
+  OLD_createFormSection(creatorCard) {
+    const topRow = creatorCard.createDiv();
+    topRow.style.cssText = "display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px;";
+    const nameGroup = topRow.createDiv();
+    nameGroup.createEl("label", { text: "Name" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 4px;";
+    const nameInput = nameGroup.createEl("input", { type: "text", placeholder: "my-callout" });
+    nameInput.style.cssText = "width: 100%; padding: 8px 12px; border: 1px solid var(--background-modifier-border); border-radius: 6px; background: var(--background-primary); color: var(--text-normal); font-size: 0.9rem;";
+    nameInput.value = this.tempName;
+    const iconGroup = topRow.createDiv();
+    iconGroup.createEl("label", { text: "Icon" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 4px;";
+    const iconWrapper = iconGroup.createDiv();
+    iconWrapper.style.cssText = "display: flex; gap: 6px;";
+    const iconInput = iconWrapper.createEl("input", { type: "text", placeholder: "star" });
+    iconInput.style.cssText = "flex: 1; min-width: 0; padding: 8px 12px; border: 1px solid var(--background-modifier-border); border-radius: 6px; background: var(--background-primary); color: var(--text-normal); font-size: 0.9rem;";
+    iconInput.value = this.tempIcon;
+    const iconBtn = iconWrapper.createEl("button");
+    iconBtn.style.cssText = "padding: 0 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;";
+    (0, import_obsidian3.setIcon)(iconBtn, "search");
+    iconBtn.title = "Browse Icons";
+    iconBtn.onmouseover = () => {
+      iconBtn.style.borderColor = "var(--interactive-accent)";
+      iconBtn.style.color = "var(--text-normal)";
+    };
+    iconBtn.onmouseout = () => {
+      iconBtn.style.borderColor = "var(--background-modifier-border)";
+      iconBtn.style.color = "var(--text-muted)";
+    };
+    iconBtn.onclick = () => {
+      new IconPickerModal(this.app, (selectedIcon) => {
+        this.tempIcon = selectedIcon;
+        iconInput.value = selectedIcon;
+        this.updatePreview(previewBox);
+      }).open();
+    };
+    const typoRow = creatorCard.createDiv();
+    typoRow.style.cssText = "display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px;";
+    const fontGroup = typoRow.createDiv();
+    fontGroup.createEl("label", { text: "Font Family" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 4px;";
+    const fontSelect = new import_obsidian3.DropdownComponent(fontGroup);
+    fontSelect.selectEl.style.width = "100%";
+    fontSelect.selectEl.style.background = "var(--background-primary)";
+    fontSelect.addOption("", "Default");
+    Object.keys(FONT_FAMILIES).forEach((f) => fontSelect.addOption(f, f.charAt(0).toUpperCase() + f.slice(1)));
+    fontSelect.setValue(this.tempFont);
+    fontSelect.onChange((val) => {
+      this.tempFont = val;
+      this.updatePreview(previewBox);
+    });
+    const sizeGroup = typoRow.createDiv();
+    sizeGroup.createEl("label", { text: "Size" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 4px;";
+    const sizeSelect = new import_obsidian3.DropdownComponent(sizeGroup);
+    sizeSelect.selectEl.style.width = "100%";
+    sizeSelect.selectEl.style.background = "var(--background-primary)";
+    Object.keys(FONT_SIZES).forEach((s) => sizeSelect.addOption(s, s === "3" ? "3 (Normal)" : s));
+    sizeSelect.setValue(this.tempFontSize.toString());
+    sizeSelect.onChange((val) => {
+      this.tempFontSize = parseInt(val);
+      this.updatePreview(previewBox);
+    });
+    const colorsLabel = creatorCard.createDiv();
+    colorsLabel.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 10px;";
+    colorsLabel.createEl("span", { text: "Colors" }).style.cssText = "font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;";
+    colorsLabel.createDiv().style.cssText = "flex: 1; height: 1px; background: var(--background-modifier-border);";
+    const colorsGrid = creatorCard.createDiv();
+    colorsGrid.style.cssText = "display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px;";
+    const colorConfigs = [
+      { label: "BG", value: () => this.tempBg, setter: (v) => this.tempBg = v },
+      { label: "Border", value: () => this.tempBorder, setter: (v) => this.tempBorder = v },
+      { label: "Title", value: () => this.tempTitleColor, setter: (v) => this.tempTitleColor = v },
+      { label: "Text", value: () => this.tempText, setter: (v) => this.tempText = v },
+      { label: "Link", value: () => this.tempLink, setter: (v) => this.tempLink = v }
+    ];
+    const previewLabel = creatorCard.createDiv();
+    previewLabel.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 8px;";
+    previewLabel.createEl("span", { text: "Preview" }).style.cssText = "font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;";
+    previewLabel.createDiv().style.cssText = "flex: 1; height: 1px; background: var(--background-modifier-border);";
+    const previewBox = creatorCard.createDiv({ cls: "callout" });
+    previewBox.style.cssText = "margin-bottom: 16px;";
+    colorConfigs.forEach((config) => {
+      const colorItem = colorsGrid.createDiv();
+      colorItem.style.cssText = "display: flex; flex-direction: column; align-items: center; gap: 6px;";
+      const colorLabel = colorItem.createEl("label", { text: config.label });
+      colorLabel.style.cssText = "font-size: 0.7rem; color: var(--text-muted); font-weight: 500;";
+      const colorPicker = colorItem.createEl("input", { type: "color" });
+      colorPicker.style.cssText = "width: 36px; height: 36px; border: 2px solid var(--background-modifier-border); border-radius: 50%; cursor: pointer; padding: 0; background: transparent; -webkit-appearance: none; appearance: none; overflow: hidden;";
+      colorPicker.value = config.value();
+      const hexInput = colorItem.createEl("input", { type: "text" });
+      hexInput.style.cssText = "width: 70px; padding: 4px 6px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: var(--background-primary); color: var(--text-normal); font-size: 0.7rem; font-family: monospace; text-align: center; text-transform: uppercase;";
+      hexInput.value = config.value().toUpperCase();
+      hexInput.placeholder = "#FFFFFF";
+      colorPicker.addEventListener("input", (e) => {
+        const newValue = e.target.value;
+        config.setter(newValue);
+        hexInput.value = newValue.toUpperCase();
+        this.updatePreview(previewBox);
+      });
+      hexInput.addEventListener("input", (e) => {
+        let val = e.target.value;
+        if (!val.startsWith("#")) val = "#" + val;
+        if (isValidHex(val)) {
+          const normalized = normalizeHex(val);
+          config.setter(normalized);
+          colorPicker.value = normalized;
+          this.updatePreview(previewBox);
+        }
+      });
+      hexInput.addEventListener("blur", () => {
+        hexInput.value = config.value().toUpperCase();
+      });
+    });
+    nameInput.oninput = () => {
+      this.tempName = nameInput.value;
+      this.updatePreview(previewBox);
+    };
+    iconInput.oninput = () => {
+      this.tempIcon = iconInput.value;
+      this.updatePreview(previewBox);
+    };
+    this.updatePreview(previewBox);
+    return previewBox;
+  }
+  createActionButtons(creatorCard, section, previewBox) {
+    const bottomRow = creatorCard.createDiv();
+    bottomRow.style.cssText = "display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 20px;";
+    const leftGroup = bottomRow.createDiv();
+    leftGroup.style.cssText = "display: flex; align-items: center; gap: 16px;";
+    const toggleRow = leftGroup.createDiv();
+    toggleRow.style.cssText = "display: flex; align-items: center; gap: 8px;";
+    const toggle = toggleRow.createEl("input", { type: "checkbox" });
+    toggle.checked = this.tempBoldBorder;
+    toggle.style.cssText = "width: 16px; height: 16px; cursor: pointer;";
+    toggle.onchange = () => {
+      this.tempBoldBorder = toggle.checked;
+      this.updatePreview(previewBox);
+    };
+    toggleRow.createEl("span", { text: "Bold border" }).style.cssText = "font-size: 0.85rem; color: var(--text-muted); margin-right: 12px;";
+    const centerToggle = toggleRow.createEl("input", { type: "checkbox" });
+    centerToggle.checked = this.tempCenter;
+    centerToggle.style.cssText = "width: 16px; height: 16px; cursor: pointer;";
+    centerToggle.onchange = () => {
+      this.tempCenter = centerToggle.checked;
+      this.updatePreview(previewBox);
+    };
+    toggleRow.createEl("span", { text: "Center" }).style.cssText = "font-size: 0.85rem; color: var(--text-muted); margin-right: 12px;";
+    const titleCenterToggle = toggleRow.createEl("input", { type: "checkbox" });
+    titleCenterToggle.checked = this.tempTitleCenter;
+    titleCenterToggle.style.cssText = "width: 16px; height: 16px; cursor: pointer;";
+    titleCenterToggle.onchange = () => {
+      this.tempTitleCenter = titleCenterToggle.checked;
+      this.updatePreview(previewBox);
+    };
+    toggleRow.createEl("span", { text: "Title Center" }).style.cssText = "font-size: 0.85rem; color: var(--text-muted);";
+    const ioGroup = leftGroup.createDiv();
+    ioGroup.style.cssText = "display: flex; gap: 8px; border-left: 1px solid var(--background-modifier-border); padding-left: 16px;";
+    const exportBtn = ioGroup.createEl("button");
+    exportBtn.style.cssText = `
+            padding: 6px 10px;
+            background: var(--background-primary);
+            border: 1px solid var(--background-modifier-border);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+        `;
+    (0, import_obsidian3.setIcon)(exportBtn, "upload");
+    const expLabel = exportBtn.createSpan({ text: "Export" });
+    exportBtn.title = "Copy current style to clipboard as JSON";
+    exportBtn.onmouseover = () => {
+      exportBtn.style.color = "var(--text-normal)";
+      exportBtn.style.borderColor = "var(--interactive-accent)";
+    };
+    exportBtn.onmouseout = () => {
+      exportBtn.style.color = "var(--text-muted)";
+      exportBtn.style.borderColor = "var(--background-modifier-border)";
+    };
+    exportBtn.onclick = () => {
+      const styleData = {
+        name: this.tempName,
+        bg: this.tempBg,
+        border: this.tempBorder,
+        text: this.tempText,
+        link: this.tempLink,
+        titleColor: this.tempTitleColor,
+        icon: this.tempIcon,
+        boldBorder: this.tempBoldBorder,
+        center: this.tempCenter,
+        titleCenter: this.tempTitleCenter
+      };
+      navigator.clipboard.writeText(JSON.stringify(styleData, null, 2)).then(() => {
+        new import_obsidian3.Notice("Style JSON copied to clipboard!");
+        exportBtn.style.backgroundColor = "var(--interactive-success)";
+        exportBtn.style.color = "white";
+        setTimeout(() => {
+          exportBtn.style.background = "var(--background-primary)";
+          exportBtn.style.color = "var(--text-muted)";
+        }, 1e3);
+      }).catch((err) => {
+        new import_obsidian3.Notice("Failed to copy to clipboard.");
+        console.error(err);
+      });
+    };
+    const importBtn = ioGroup.createEl("button");
+    importBtn.style.cssText = `
+            padding: 6px 10px;
+            background: var(--background-primary);
+            border: 1px solid var(--background-modifier-border);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+        `;
+    (0, import_obsidian3.setIcon)(importBtn, "download");
+    importBtn.createSpan({ text: "Import" });
+    importBtn.title = "Paste JSON style";
+    importBtn.onmouseover = () => {
+      importBtn.style.color = "var(--text-normal)";
+      importBtn.style.borderColor = "var(--interactive-accent)";
+    };
+    importBtn.onmouseout = () => {
+      importBtn.style.color = "var(--text-muted)";
+      importBtn.style.borderColor = "var(--background-modifier-border)";
+    };
+    importBtn.onclick = () => {
+      const modal = new ImportStyleModal(this.app, this.plugin.settings, (importedStyle) => {
+        this.tempName = importedStyle.name || this.tempName;
+        this.tempBg = importedStyle.bg || this.tempBg;
+        this.tempBorder = importedStyle.border || this.tempBorder;
+        this.tempText = importedStyle.text || this.tempText;
+        this.tempLink = importedStyle.link || this.tempLink;
+        this.tempTitleColor = importedStyle.titleColor || this.tempBg;
+        this.tempIcon = importedStyle.icon || this.tempIcon;
+        this.tempBoldBorder = importedStyle.boldBorder || false;
+        this.display();
+        new import_obsidian3.Notice("Style imported successfully!");
+      });
+      modal.open();
+    };
+    const buttonsRow = bottomRow.createDiv();
+    buttonsRow.style.cssText = "display: flex; gap: 10px;";
+    const cancelBtn = buttonsRow.createEl("button", { text: "Cancel" });
+    cancelBtn.style.cssText = `
+            padding: 10px 20px;
+            background: var(--background-modifier-border);
+            color: var(--text-normal);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: opacity 0.15s;
+        `;
+    cancelBtn.onmouseover = () => cancelBtn.style.opacity = "0.85";
+    cancelBtn.onmouseout = () => cancelBtn.style.opacity = "1";
+    cancelBtn.onclick = () => {
+      this.editingIndex = null;
+      this.resetForm();
+      this.display();
+    };
+    const saveBtn = buttonsRow.createEl("button", { text: this.editingIndex !== null ? "Update Style" : "Save Style" });
+    saveBtn.style.cssText = `
+            padding: 10px 24px;
+            background: var(--interactive-accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: opacity 0.15s;
+        `;
+    saveBtn.onmouseover = () => saveBtn.style.opacity = "0.85";
+    saveBtn.onmouseout = () => saveBtn.style.opacity = "1";
+    saveBtn.onclick = async () => {
+      if (this.tempName) {
+        const existingIndex = this.plugin.settings.customStyles.findIndex(
+          (s) => s.name.toLowerCase() === this.tempName.toLowerCase()
+        );
+        if (existingIndex !== -1 && existingIndex !== this.editingIndex) {
+          const errorDiv = creatorCard.querySelector(".duplicate-error");
+          if (errorDiv) errorDiv.remove();
+          const error = creatorCard.createDiv({ cls: "duplicate-error" });
+          error.style.cssText = "padding: 10px; background: #ff5252; color: white; border-radius: 6px; margin-top: 10px; font-size: 0.9rem;";
+          error.textContent = `A style named "${this.tempName}" already exists. Please use a different name.`;
+          setTimeout(() => error.remove(), 3e3);
+          return;
+        }
+        const newStyle = {
+          name: this.tempName,
+          bg: this.tempBg,
+          border: this.tempBorder,
+          text: this.tempText,
+          link: this.tempLink,
+          icon: this.tempIcon,
+          titleColor: this.tempTitleColor,
+          boldBorder: this.tempBoldBorder,
+          font: this.tempFont,
+          fontSize: this.tempFontSize,
+          center: this.tempCenter,
+          titleCenter: this.tempTitleCenter
+        };
+        if (this.editingIndex !== null) {
+          this.plugin.settings.customStyles[this.editingIndex] = newStyle;
+          this.editingIndex = null;
+        } else {
+          this.plugin.settings.customStyles.push(newStyle);
+        }
+        await this.plugin.saveSettings();
+        this.resetForm();
+        this.display();
+      }
+    };
+  }
+  createSavedStylesList(section, container) {
+    const savedHeader = section.createDiv();
+    savedHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-top: 20px; margin-bottom: 10px;";
+    const headerTitle = savedHeader.createEl("h4", { text: "Saved Styles" });
+    headerTitle.style.margin = "0";
+    const viewToggle = savedHeader.createDiv();
+    viewToggle.style.cssText = "display: flex; gap: 5px;";
+    const gridBtn = viewToggle.createEl("button", { text: "Grid" });
+    gridBtn.style.cssText = `padding: 5px 12px; border: 1px solid var(--background-modifier-border); background: ${this.stylesViewMode === "grid" ? "var(--interactive-accent)" : "var(--background-primary)"}; color: ${this.stylesViewMode === "grid" ? "white" : "var(--text-normal)"}; border-radius: 4px; cursor: pointer; font-size: 0.8rem;`;
+    gridBtn.onclick = () => {
+      this.stylesViewMode = "grid";
+      this.display();
+    };
+    const listBtn = viewToggle.createEl("button", { text: "List" });
+    listBtn.style.cssText = `padding: 5px 12px; border: 1px solid var(--background-modifier-border); background: ${this.stylesViewMode === "list" ? "var(--interactive-accent)" : "var(--background-primary)"}; color: ${this.stylesViewMode === "list" ? "white" : "var(--text-normal)"}; border-radius: 4px; cursor: pointer; font-size: 0.8rem;`;
+    listBtn.onclick = () => {
+      this.stylesViewMode = "list";
+      this.display();
+    };
+    const stylesContainer = section.createDiv();
+    stylesContainer.style.cssText = this.stylesViewMode === "grid" ? "display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;" : "display: flex; flex-direction: column; gap: 10px;";
+    this.plugin.settings.customStyles.forEach((s, i) => {
+      this.renderStyleCard(stylesContainer, s, i, container);
+    });
+  }
+  renderStyleCard(stylesContainer, s, i, container) {
+    const card = stylesContainer.createDiv();
+    card.style.cssText = "border: 1px solid var(--background-modifier-border); border-radius: 6px; padding: 10px; background: var(--background-secondary);";
+    const header = card.createDiv();
+    header.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;";
+    const title = header.createEl("h4", { text: s.name });
+    title.style.cssText = "margin: 0; font-size: 0.95rem; font-weight: 600;";
+    const actions = header.createDiv();
+    actions.style.cssText = "display: flex; gap: 4px;";
+    const editBtn = actions.createEl("button");
+    editBtn.style.cssText = "padding: 4px 8px; background: transparent; border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; color: var(--text-muted);";
+    (0, import_obsidian3.setIcon)(editBtn, "pencil");
+    editBtn.onclick = () => {
+      this.editingIndex = i;
+      this.tempName = s.name;
+      this.tempIcon = s.icon;
+      this.tempBg = s.bg;
+      this.tempBorder = s.border;
+      this.tempText = s.text;
+      this.tempLink = s.link;
+      this.tempTitleColor = s.titleColor || s.bg;
+      this.tempBoldBorder = s.boldBorder || false;
+      this.tempFont = s.font || "";
+      this.tempFontSize = s.fontSize || 3;
+      this.tempCenter = s.center || false;
+      this.tempTitleCenter = s.titleCenter || false;
+      this.display();
+      container.scrollIntoView({ behavior: "smooth" });
+    };
+    const deleteBtn = actions.createEl("button");
+    deleteBtn.style.cssText = "padding: 4px 8px; background: transparent; border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; color: var(--text-muted);";
+    (0, import_obsidian3.setIcon)(deleteBtn, "trash-2");
+    deleteBtn.onclick = async () => {
+      this.plugin.settings.customStyles.splice(i, 1);
+      await this.plugin.saveSettings();
+      this.display();
+    };
+    if (this.stylesViewMode === "grid") {
+      const preview = card.createDiv();
+      const borderWidth = s.boldBorder ? "5px" : "2px";
+      preview.style.cssText = `
+                background: linear-gradient(135deg, ${s.bg}15 0%, ${s.border}25 100%);
+                border: 1px solid ${s.border}30;
+                border-left: ${borderWidth} solid ${s.bg};
+                border-radius: 6px;
+                padding: 10px;
+                margin-bottom: 8px;
+            `;
+      const previewTitle = preview.createDiv();
+      previewTitle.style.cssText = `display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.9rem; color: ${s.titleColor || s.bg};`;
+      const icon = previewTitle.createSpan();
+      icon.style.cssText = `display: inline-flex; color: ${s.titleColor || s.bg};`;
+      (0, import_obsidian3.setIcon)(icon, s.icon || "box");
+      previewTitle.createSpan({ text: "Sample Callout" });
+      const previewContent = preview.createDiv();
+      previewContent.style.cssText = `color: ${s.text}; font-size: 0.85rem; margin-top: 6px; line-height: 1.4;`;
+      if (s.font && FONT_FAMILIES[s.font]) {
+        preview.style.fontFamily = FONT_FAMILIES[s.font];
+      }
+      previewContent.textContent = "This is how your callout will look with ";
+      const link = previewContent.createEl("a", { text: "a link", href: "#" });
+      link.style.cssText = `color: ${s.link}; text-decoration: underline;`;
+      link.onclick = (e) => e.preventDefault();
+      previewContent.appendText(" inside.");
+    }
+    const details = card.createDiv();
+    details.style.cssText = "display: flex; gap: 6px; flex-wrap: wrap; font-size: 0.75rem;";
+    const iconBadge = details.createEl("span", { text: `Icon: ${s.icon}` });
+    iconBadge.style.cssText = "padding: 3px 8px; background: var(--background-primary); border-radius: 3px; color: var(--text-muted);";
+    if (s.boldBorder) {
+      const boldBadge = details.createEl("span", { text: "Bold Border" });
+      boldBadge.style.cssText = "padding: 3px 8px; background: var(--background-primary); border-radius: 3px; color: var(--text-muted);";
+    }
+    if (s.titleColor && s.titleColor !== s.bg) {
+      const titleBadge = details.createEl("span", { text: `Title: ${s.titleColor}` });
+      titleBadge.style.cssText = "padding: 3px 8px; background: var(--background-primary); border-radius: 3px; color: var(--text-muted);";
+    }
+  }
+  createStandardColorsSection(container) {
+    const section = container.createEl("details");
+    section.open = false;
+    const summary = section.createEl("summary");
+    summary.style.cssText = "font-weight: 600; font-size: 1.1rem; margin: 0 0 0.75rem 0; cursor: pointer; color: var(--text-muted);";
+    summary.textContent = "Standard Colors";
     Object.keys(this.plugin.settings.standardColors).forEach((colorName) => {
       if (colorName === "gray") return;
-      new import_obsidian.Setting(standardSection).setName(colorName.charAt(0).toUpperCase() + colorName.slice(1)).addText((t) => {
-        t.setValue(this.plugin.settings.standardColors[colorName]).onChange(async (v) => {
+      const setting = new import_obsidian3.Setting(section).setName(colorName.charAt(0).toUpperCase() + colorName.slice(1));
+      setting.controlEl.style.cssText = "display: flex; gap: 5px; flex-wrap: wrap;";
+      setting.addText((t) => {
+        t.inputEl.style.cssText = "width: 90px; font-family: monospace;";
+        t.setValue(this.plugin.settings.standardColors[colorName]).setPlaceholder("#FFFFFF").onChange(async (v) => {
           if (isValidHex(v)) {
             this.plugin.settings.standardColors[colorName] = normalizeHex(v);
             if (colorName === "grey") this.plugin.settings.standardColors["gray"] = normalizeHex(v);
@@ -304,116 +2566,596 @@ var SpecialCalloutsSettingTab = class extends import_obsidian.PluginSettingTab {
         });
       });
     });
-    const customColorSection = containerEl.createEl("details");
-    customColorSection.open = false;
-    customColorSection.createEl("summary", { text: "Custom Colors" });
-    const addColorRow = customColorSection.createDiv();
-    addColorRow.style.display = "flex";
-    addColorRow.style.gap = "10px";
-    addColorRow.style.alignItems = "center";
-    addColorRow.style.marginTop = "10px";
-    const nameInput = addColorRow.createEl("input", { type: "text", placeholder: "name" });
-    const hexInput = addColorRow.createEl("input", { type: "text", placeholder: "#HEX" });
-    const pickerInput = addColorRow.createEl("input", { type: "color" });
+  }
+  createCustomColorsSection(container) {
+    const section = container.createEl("details");
+    section.open = false;
+    const summary = section.createEl("summary");
+    summary.style.cssText = "font-weight: 600; font-size: 1.1rem; margin: 1rem 0 0.75rem 0; cursor: pointer; color: var(--text-muted);";
+    summary.textContent = "Custom Colors";
+    const addColorRow = section.createDiv();
+    addColorRow.style.cssText = "display: flex; gap: 10px; align-items: center; margin: 10px 0 15px 0; flex-wrap: wrap;";
+    const nameInput = addColorRow.createEl("input", { type: "text", placeholder: "Color name" });
+    nameInput.style.cssText = "flex: 1; min-width: 120px; padding: 8px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: var(--background-primary);";
+    const colorPicker = addColorRow.createEl("input", { type: "color" });
+    colorPicker.style.cssText = "width: 50px; height: 38px; border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer;";
+    colorPicker.value = this.newCustomColorHex;
+    const hexInput = addColorRow.createEl("input", { type: "text", placeholder: "#FFFFFF" });
+    hexInput.style.cssText = "width: 100px; font-family: monospace; padding: 8px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: var(--background-primary);";
+    hexInput.value = this.newCustomColorHex;
     nameInput.addEventListener("input", (e) => this.newCustomColorName = e.target.value);
     hexInput.addEventListener("input", (e) => {
       let v = e.target.value;
       if (!v.startsWith("#")) v = "#" + v;
       if (isValidHex(v)) {
         this.newCustomColorHex = normalizeHex(v);
-        pickerInput.value = this.newCustomColorHex;
+        colorPicker.value = this.newCustomColorHex;
       }
     });
-    pickerInput.addEventListener("input", (e) => {
+    colorPicker.addEventListener("input", (e) => {
       this.newCustomColorHex = e.target.value;
       hexInput.value = this.newCustomColorHex.toUpperCase();
     });
     const addBtn = addColorRow.createEl("button", { text: "Add" });
+    addBtn.style.cssText = "padding: 8px 20px; background: var(--interactive-accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;";
     addBtn.onclick = async () => {
-      if (this.newCustomColorName && isValidHex(this.newCustomColorHex)) {
-        this.plugin.settings.customColors.push({ name: this.newCustomColorName, hex: this.newCustomColorHex });
+      if (this.newCustomColorName.trim() && isValidHex(this.newCustomColorHex)) {
+        this.plugin.settings.customColors.push({
+          name: this.newCustomColorName.trim(),
+          hex: this.newCustomColorHex
+        });
         await this.plugin.saveSettings();
+        nameInput.value = "";
+        hexInput.value = "#FFFFFF";
+        this.newCustomColorName = "";
+        this.newCustomColorHex = "#FFFFFF";
+        colorPicker.value = "#FFFFFF";
         this.display();
       }
     };
     this.plugin.settings.customColors.forEach((c, i) => {
-      new import_obsidian.Setting(customColorSection).setName(c.name).setDesc(c.hex).addExtraButton((b) => b.setIcon("trash").onClick(async () => {
+      const colorRow = section.createDiv();
+      colorRow.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 10px; border: 1px solid var(--background-modifier-border); border-radius: 6px; margin: 8px 0; background: var(--background-secondary);";
+      const leftSide = colorRow.createDiv();
+      leftSide.style.cssText = "display: flex; align-items: center; gap: 12px; flex: 1;";
+      const colorCircle = leftSide.createDiv();
+      colorCircle.style.cssText = `width: 32px; height: 32px; border-radius: 50%; background: ${c.hex}; border: 2px solid var(--background-modifier-border); flex-shrink: 0;`;
+      const textInfo = leftSide.createDiv();
+      const nameEl = textInfo.createDiv({ text: c.name });
+      nameEl.style.cssText = "font-weight: 500; color: var(--text-normal); margin-bottom: 2px;";
+      const hexEl = textInfo.createDiv({ text: c.hex });
+      hexEl.style.cssText = "font-family: monospace; font-size: 0.85rem; color: var(--text-muted);";
+      const deleteBtn = colorRow.createEl("button");
+      deleteBtn.style.cssText = "padding: 6px 10px; background: transparent; border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; color: var(--text-muted);";
+      (0, import_obsidian3.setIcon)(deleteBtn, "trash-2");
+      deleteBtn.onclick = async () => {
         this.plugin.settings.customColors.splice(i, 1);
         await this.plugin.saveSettings();
         this.display();
-      }));
+      };
     });
-    const styleSection = containerEl.createEl("details");
-    styleSection.open = true;
-    styleSection.createEl("summary", { text: "Custom Callout Styles" });
-    const creatorCard = styleSection.createDiv();
-    creatorCard.style.padding = "15px";
-    creatorCard.style.border = "1px solid var(--background-modifier-border)";
-    creatorCard.style.borderRadius = "8px";
-    creatorCard.style.marginTop = "10px";
-    new import_obsidian.Setting(creatorCard).setName("Name").addText((t) => t.setPlaceholder("project").setValue(this.tempName).onChange((v) => {
-      this.tempName = v;
-      this.updatePreview(previewBox);
-    }));
-    new import_obsidian.Setting(creatorCard).setName("Icon").addText((t) => t.setPlaceholder("zap").setValue(this.tempIcon).onChange((v) => {
-      this.tempIcon = v;
-      this.updatePreview(previewBox);
-    }));
-    const colorsDiv = creatorCard.createDiv();
-    colorsDiv.style.display = "grid";
-    colorsDiv.style.gridTemplateColumns = "1fr 1fr";
-    colorsDiv.style.gap = "10px";
-    const addColor = (name, val, cb) => {
-      const d = colorsDiv.createDiv();
-      new import_obsidian.Setting(d).setName(name).addColorPicker((c) => c.setValue(val).onChange((v) => {
-        cb(v);
-        this.updatePreview(previewBox);
-      }));
+  }
+  resetForm() {
+    this.tempName = "";
+    this.tempIcon = "";
+    this.tempBg = "#3498db";
+    this.tempBorder = "#3498db";
+    this.tempText = "#ffffff";
+    this.tempLink = "#dfe4ea";
+    this.tempTitleColor = "#3498db";
+    this.tempBoldBorder = false;
+    this.tempFont = "";
+    this.tempFontSize = 3;
+    this.tempBorderWidth = "";
+    this.tempBorderStyle = "solid";
+    this.tempBorderRadius = "";
+    this.tempNeon = "";
+    this.tempNoIcon = false;
+    this.tempCompact = false;
+    this.tempCenter = false;
+    this.tempTitleCenter = false;
+  }
+  createPanelHeader(parent, text) {
+    const h = parent.createDiv();
+    h.style.cssText = "font-size: 0.7rem; font-weight: 700; color: var(--text-accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; opacity: 0.8; padding-top: 4px; border-top: 1px solid var(--background-modifier-border); margin-top: 4px;";
+    if (parent.children.length === 1) h.style.borderTop = "none";
+    h.textContent = text;
+  }
+  getStyleFromForm() {
+    return {
+      name: this.tempName,
+      bg: this.tempBg,
+      border: this.tempBorder,
+      text: this.tempText,
+      link: this.tempLink,
+      icon: this.tempIcon,
+      titleColor: this.tempTitleColor,
+      boldBorder: this.tempBoldBorder,
+      font: this.tempFont,
+      fontSize: this.tempFontSize,
+      borderWidth: this.tempBorderWidth,
+      borderStyle: this.tempBorderStyle,
+      borderRadius: this.tempBorderRadius,
+      neon: this.tempNeon,
+      noIcon: this.tempNoIcon,
+      compact: this.tempCompact
     };
-    addColor("Background", this.tempBg, (v) => this.tempBg = v);
-    addColor("Border", this.tempBorder, (v) => this.tempBorder = v);
-    addColor("Text", this.tempText, (v) => this.tempText = v);
-    addColor("Link", this.tempLink, (v) => this.tempLink = v);
-    const previewBox = creatorCard.createDiv({ cls: "callout" });
-    previewBox.style.marginTop = "15px";
-    this.updatePreview(previewBox);
-    new import_obsidian.Setting(creatorCard).addButton((b) => b.setButtonText("Save Style").setCta().onClick(async () => {
-      if (this.tempName) {
-        this.plugin.settings.customStyles.push({
-          name: this.tempName,
-          bg: this.tempBg,
-          border: this.tempBorder,
-          text: this.tempText,
-          link: this.tempLink,
-          icon: this.tempIcon
-        });
-        await this.plugin.saveSettings();
-        this.display();
-      }
-    }));
-    if (this.plugin.settings.customStyles.length > 0) {
-      const savedHeader = styleSection.createEl("h4", { text: "Saved Styles" });
-      savedHeader.style.marginTop = "20px";
-      this.plugin.settings.customStyles.forEach((s, i) => {
-        new import_obsidian.Setting(styleSection).setName(s.name).setDesc(`Icon: ${s.icon}`).addExtraButton((b) => b.setIcon("trash").onClick(async () => {
-          this.plugin.settings.customStyles.splice(i, 1);
-          await this.plugin.saveSettings();
-          this.display();
-        }));
-      });
+  }
+  loadStyleToForm(s) {
+    this.tempName = s.name || "";
+    this.tempBg = s.bg || "#ffffff";
+    this.tempBorder = s.border || "#dedede";
+    this.tempText = s.text || "#333333";
+    this.tempLink = s.link || "#dfe4ea";
+    this.tempIcon = s.icon || "";
+    this.tempTitleColor = s.titleColor || s.bg;
+    this.tempBoldBorder = s.boldBorder || false;
+    this.tempFont = s.font || "";
+    this.tempFontSize = s.fontSize || 3;
+    this.tempBorderWidth = s.borderWidth || "";
+    this.tempBorderStyle = s.borderStyle || "solid";
+    this.tempBorderRadius = s.borderRadius || "";
+    this.tempNeon = s.neon || "";
+    this.tempNoIcon = s.noIcon || false;
+    this.tempCompact = s.compact || false;
+  }
+  async saveCurrentStyle() {
+    if (!this.tempName.trim()) {
+      new import_obsidian3.Notice("Please enter a name");
+      return;
     }
+    const newStyle = this.getStyleFromForm();
+    if (this.editingIndex !== null) {
+      this.plugin.settings.customStyles[this.editingIndex] = newStyle;
+      this.editingIndex = null;
+    } else {
+      if (this.plugin.settings.customStyles.some((s) => s.name === newStyle.name)) {
+        new import_obsidian3.Notice("Name already exists!");
+        return;
+      }
+      this.plugin.settings.customStyles.push(newStyle);
+    }
+    await this.plugin.saveSettings();
+    new import_obsidian3.Notice("Style saved!");
   }
   updatePreview(el) {
     el.empty();
-    el.style.setProperty("--callout-color", this.tempBg);
-    el.style.backgroundColor = `color-mix(in srgb, ${this.tempBg} 10%, transparent)`;
-    el.style.border = `1px solid ${this.tempBorder}`;
-    el.style.borderLeft = `5px solid ${this.tempBg}`;
-    el.style.padding = "10px";
+    el.style.border = "none";
+    if (this.tempBg && (this.tempBg.includes("gradient") || this.tempBg.startsWith("url"))) {
+      el.style.background = this.tempBg;
+    } else {
+      el.style.background = `color-mix(in srgb, ${this.tempBg} 15%, transparent)`;
+    }
+    let borderWidth = this.tempBoldBorder ? "5px" : "2px";
+    if (this.tempBorderWidth) borderWidth = this.tempBorderWidth;
+    if (!isNaN(Number(borderWidth))) borderWidth += "px";
+    const borderStyle = this.tempBorderStyle || "solid";
+    const borderColor = this.tempBorder || "var(--text-accent)";
+    el.style.border = `${borderWidth} ${borderStyle} ${borderColor}`;
+    el.style.borderLeft = `${borderWidth} ${borderStyle} ${borderColor}`;
+    if (this.tempBorderRadius) {
+      el.style.borderRadius = this.tempBorderRadius + (isNaN(Number(this.tempBorderRadius)) ? "" : "px");
+    } else {
+      el.style.borderRadius = "6px";
+    }
+    if (this.tempNeon) {
+      el.style.boxShadow = `0 0 10px ${this.tempNeon}, inset 0 0 5px ${this.tempNeon}20`;
+      el.style.borderColor = this.tempNeon;
+    } else {
+      el.style.boxShadow = "none";
+    }
+    if (this.tempFont && FONT_FAMILIES[this.tempFont]) {
+      el.style.fontFamily = FONT_FAMILIES[this.tempFont];
+    } else {
+      el.style.fontFamily = "inherit";
+    }
+    if (this.tempFontSize && FONT_SIZES[this.tempFontSize]) {
+      el.style.fontSize = FONT_SIZES[this.tempFontSize];
+    } else {
+      el.style.fontSize = "1em";
+    }
+    const isCompact = this.tempCompact;
+    const isCenter = this.tempCenter;
+    const isTitleCenter = this.tempTitleCenter;
+    const noIcon = this.tempNoIcon;
+    if (isCenter) {
+      el.style.textAlign = "center";
+      el.style.alignItems = "center";
+    }
+    if (isCompact) {
+      el.style.paddingTop = "0";
+      el.style.paddingBottom = "0";
+      el.style.paddingLeft = "0";
+      el.style.paddingRight = "0";
+    } else {
+      el.style.padding = "1rem";
+    }
     const t = el.createDiv({ cls: "callout-title" });
-    t.style.color = this.tempBg;
-    const i = t.createDiv({ cls: "callout-icon" });
-    (0, import_obsidian.setIcon)(i, this.tempIcon || "box");
-    t.createDiv({ cls: "callout-title-inner", text: this.tempName || "Preview" });
+    t.style.color = this.tempTitleColor;
+    t.style.backgroundColor = "transparent";
+    t.style.display = "flex";
+    t.style.alignItems = "center";
+    t.style.gap = "0.5em";
+    t.style.fontWeight = "600";
+    if (isCenter || isTitleCenter) {
+      t.style.justifyContent = "center";
+      t.style.textAlign = "center";
+    }
+    if (isCompact) t.style.padding = "0.5em 0.8em";
+    if (!noIcon) {
+      const i = t.createDiv({ cls: "callout-icon" });
+      i.style.color = this.tempTitleColor;
+      i.style.display = "flex";
+      (0, import_obsidian3.setIcon)(i, this.tempIcon || "pencil");
+    }
+    const titleInner = t.createDiv({ cls: "callout-title-inner", text: this.tempName || "Callout Preview" });
+    if (this.tempFontSize) {
+      titleInner.style.fontSize = "1em";
+    }
+    const c = el.createDiv({ cls: "callout-content" });
+    c.style.color = this.tempText;
+    c.style.lineHeight = "1.6";
+    if (isCenter) {
+      c.style.textAlign = "center";
+      c.style.display = "flex";
+      c.style.flexDirection = "column";
+      c.style.alignItems = "center";
+    }
+    if (isCompact) {
+      c.style.padding = "0 0.8em 0.5em 0.8em";
+    } else {
+      c.style.marginTop = "8px";
+    }
+    c.createDiv({ text: "This is how your callout will appear with customizable styles. " });
+    const l = c.createEl("a", { text: "Links look like this", href: "#" });
+    l.style.color = this.tempLink;
+    l.style.textDecoration = "underline";
+    l.onclick = (e) => e.preventDefault();
+    c.createSpan({ text: "." });
+  }
+  applyRandomStyle() {
+    const hue = Math.floor(Math.random() * 360);
+    const sat = 50 + Math.floor(Math.random() * 30);
+    const light = 20 + Math.floor(Math.random() * 30);
+    const secHue = (hue + 180) % 360;
+    this.tempBg = this.hslToHex(hue, sat, Math.max(10, light - 10));
+    this.tempBorder = this.hslToHex(hue, sat + 10, light + 20);
+    this.tempTitleColor = this.hslToHex(hue, sat + 20, Math.min(90, light + 40));
+    this.tempText = "#eeeeee";
+    this.tempLink = this.hslToHex(secHue, 70, 70);
+    const icons = ["zap", "star", "heart", "anchor", "book", "box", "flame", "droplet", "feather", "sun", "moon", "award"];
+    this.tempIcon = icons[Math.floor(Math.random() * icons.length)];
+    this.tempName = `random-${Math.floor(Math.random() * 999)}`;
+    this.tempNeon = Math.random() > 0.6 ? this.tempBorder : "";
+    this.tempCompact = Math.random() > 0.8;
+    this.tempBoldBorder = Math.random() > 0.7;
+  }
+  hslToHex(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = (n) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      const hex = Math.round(255 * color).toString(16);
+      return hex.length === 1 ? "0" + hex : hex;
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
   }
 };
+var ImportStyleModal = class extends import_obsidian3.Modal {
+  constructor(app, settings, onSubmit) {
+    super(app);
+    this.jsonText = "";
+    this.settings = settings;
+    this.onSubmit = onSubmit;
+  }
+  ensureHex(color) {
+    if (!color) return color;
+    if (color.startsWith("#")) return color;
+    const basicColors = {
+      "white": "#ffffff",
+      "black": "#000000",
+      "transparent": "#00000000",
+      // approximate or keep transparent if UI handles it? keep transparent.
+      // UI Color picker hates 'transparent', but standard hex is needed.
+      // Let's use clean hexes.
+      "red": "#ff0000",
+      "green": "#008000",
+      "blue": "#0000ff",
+      "yellow": "#ffff00",
+      "cyan": "#00ffff",
+      "magenta": "#ff00ff",
+      "gray": "#808080",
+      "grey": "#808080",
+      "silver": "#c0c0c0",
+      "maroon": "#800000",
+      "olive": "#808000",
+      "purple": "#800080",
+      "teal": "#008080",
+      "navy": "#000080",
+      "orange": "#ffa500",
+      "brown": "#a52a2a",
+      "pink": "#ffc0cb",
+      "lime": "#00ff00",
+      "indigo": "#4b0082",
+      "violet": "#ee82ee",
+      "gold": "#ffd700",
+      "coral": "#ff7f50",
+      "crimson": "#dc143c",
+      "darkblue": "#00008b",
+      "darkcyan": "#008b8b",
+      "darkgray": "#a9a9a9",
+      "darkgreen": "#006400",
+      "darkorange": "#ff8c00",
+      "darkred": "#8b0000",
+      "deeppink": "#ff1493",
+      "deepskyblue": "#00bfff",
+      "dimgray": "#696969",
+      "dodgerblue": "#1e90ff",
+      "forestgreen": "#228b22",
+      "hotpink": "#ff69b4",
+      "lightblue": "#add8e6",
+      "lightgreen": "#90ee90",
+      "lightgrey": "#d3d3d3",
+      "lightpink": "#ffb6c1",
+      "lightsalmon": "#ffa07a",
+      "lightseagreen": "#20b2aa",
+      "lightskyblue": "#87cefa",
+      "limegreen": "#32cd32",
+      "midnightblue": "#191970",
+      "orangered": "#ff4500",
+      "royalblue": "#4169e1",
+      "salmon": "#fa8072",
+      "seagreen": "#2e8b57",
+      "skyblue": "#87ceeb",
+      "slateblue": "#6a5acd",
+      "slategray": "#708090",
+      "springgreen": "#00ff7f",
+      "steelblue": "#4682b4",
+      "tomato": "#ff6347",
+      "turquoise": "#40e0d0"
+    };
+    return basicColors[color.toLowerCase()] || color;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.createEl("h3", { text: "Import Style" });
+    const helpText = contentEl.createEl("p", { text: "Paste a JSON style object OR a callout with metadata (e.g., > [!callout] (col:2, neon:red))." });
+    helpText.style.color = "var(--text-muted)";
+    helpText.style.fontSize = "0.9rem";
+    const textArea = new import_obsidian3.TextAreaComponent(contentEl);
+    textArea.inputEl.style.width = "100%";
+    textArea.inputEl.style.height = "150px";
+    textArea.inputEl.style.fontFamily = "monospace";
+    textArea.inputEl.style.fontSize = "0.8rem";
+    textArea.setPlaceholder("JSON or > [!type] (metadata)...");
+    textArea.onChange((value) => {
+      this.jsonText = value;
+    });
+    const buttonDiv = contentEl.createDiv();
+    buttonDiv.style.cssText = "display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;";
+    new import_obsidian3.ButtonComponent(buttonDiv).setButtonText("Import").setCta().onClick(() => {
+      const text = this.jsonText.trim();
+      if (!text) return;
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed && typeof parsed === "object") {
+          this.onSubmit(parsed);
+          this.close();
+          new import_obsidian3.Notice(`Imported style: ${parsed.name || "custom-style"}`);
+          return;
+        }
+      } catch (e) {
+      }
+      let detectedType = "";
+      let detectedMetadata = "";
+      const ALIAS_MAP = {
+        "summary": "abstract",
+        "tldr": "abstract",
+        "hint": "tip",
+        "important": "tip",
+        "check": "success",
+        "done": "success",
+        "help": "question",
+        "faq": "question",
+        "caution": "warning",
+        "attention": "warning",
+        "fail": "failure",
+        "missing": "failure",
+        "error": "danger",
+        "cite": "quote"
+      };
+      const lines = text.split("\n");
+      const calloutLine = lines.find((l) => l.match(/^\s*>?\s*\[!.*?\]/)) || text;
+      const typeMatch = calloutLine.match(/\[!(.*?)\]/);
+      if (typeMatch) {
+        detectedType = typeMatch[1].trim().toLowerCase();
+      }
+      let metadataStr = "";
+      const parenMatch = calloutLine.match(/\((.*?)\)/);
+      if (parenMatch) {
+        metadataStr = parenMatch[1];
+      } else if (calloutLine.includes("|")) {
+        const parts = calloutLine.split("|");
+        if (parts.length > 1) metadataStr = parts.slice(1).join("|").trim();
+      } else if (!detectedType && calloutLine.includes(":")) {
+        metadataStr = calloutLine;
+      }
+      if (metadataStr && !metadataStr.includes(",")) {
+        metadataStr = metadataStr.replace(/\s+([a-zA-Z0-9-]+:)/g, ", $1");
+      }
+      detectedMetadata = metadataStr;
+      let baseStyle = {
+        name: detectedType || "imported-style",
+        bg: "#ffffff",
+        border: "#dddddd",
+        text: "",
+        // Empty by default for theme inheritance
+        link: "#dddddd",
+        icon: "pencil"
+      };
+      let inherited = false;
+      if (detectedType) {
+        let lookupType = detectedType;
+        if (ALIAS_MAP[detectedType]) {
+          lookupType = ALIAS_MAP[detectedType];
+        }
+        const existingCustom = this.settings.customStyles.find(
+          (s) => s.name.toLowerCase() === detectedType
+        );
+        if (existingCustom) {
+          baseStyle = { ...existingCustom, name: `${existingCustom.name}-copy` };
+          inherited = true;
+        } else if (this.settings.standardStyles && this.settings.standardStyles[lookupType]) {
+          const stdStyle = this.settings.standardStyles[lookupType];
+          baseStyle = {
+            ...baseStyle,
+            ...stdStyle,
+            name: `${detectedType}-custom`
+          };
+          if (!baseStyle.link) baseStyle.link = baseStyle.border;
+          inherited = true;
+        }
+      }
+      if (detectedMetadata) {
+        try {
+          const { config } = parseMetadata(
+            detectedMetadata,
+            this.settings.standardColors,
+            this.settings.customColors
+          );
+          if (config.bg) baseStyle.bg = this.ensureHex(config.bg);
+          if (config.text) baseStyle.text = this.ensureHex(config.text);
+          if (config.border) baseStyle.border = this.ensureHex(config.border);
+          if (config.link) baseStyle.link = this.ensureHex(config.link);
+          if (config.titleColor) baseStyle.titleColor = this.ensureHex(config.titleColor);
+          if (config.borderWidth) baseStyle.borderWidth = config.borderWidth;
+          if (config.borderStyle) baseStyle.borderStyle = config.borderStyle;
+          if (config.radius) baseStyle.borderRadius = config.radius;
+          if (config.neon) baseStyle.neon = this.ensureHex(config.neon);
+          if (config.gradient) {
+            const parts = config.gradient.split("-");
+            if (parts.length >= 2) {
+              const resolve = (c) => {
+                c = c.trim();
+                const custom = this.settings.customColors.find((col) => col.name.toLowerCase() === c.toLowerCase());
+                if (custom) return custom.hex;
+                const std = this.settings.standardColors[c.toLowerCase()];
+                if (std) return std;
+                return this.ensureHex(c);
+              };
+              const c1 = resolve(parts[0]);
+              const c2 = resolve(parts[1]);
+              baseStyle.bg = `linear-gradient(90deg, ${c1}, ${c2})`;
+            } else {
+              baseStyle.bg = config.gradient;
+            }
+          }
+          if (config.noIcon) baseStyle.noIcon = true;
+          if (config.compact) baseStyle.compact = true;
+          if (config.font) baseStyle.font = config.font;
+          if (config.fontSize) baseStyle.fontSize = config.fontSize;
+          this.onSubmit(baseStyle);
+          this.close();
+          new import_obsidian3.Notice(`Imported style: ${baseStyle.name} ` + (inherited ? "(Inherited)" : ""));
+          return;
+        } catch (err) {
+          console.error("Metadata parsing failed", err);
+        }
+      } else if (detectedType && baseStyle.name.endsWith("-copy")) {
+        this.onSubmit(baseStyle);
+        this.close();
+        new import_obsidian3.Notice(`Imported style base: ${baseStyle.name}`);
+        return;
+      } else if (inherited) {
+        this.onSubmit(baseStyle);
+        this.close();
+        new import_obsidian3.Notice(`Imported standard style: ${baseStyle.name}`);
+        return;
+      }
+      new import_obsidian3.Notice("Could not extract valid style. Use JSON or Callout syntax (e.g. > [!type] (metadata)).");
+    });
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
+// main.ts
+var SpecialCallouts = class extends import_obsidian4.Plugin {
+  async onload() {
+    await this.loadSettings();
+    this.processor = new CalloutProcessor(this.settings);
+    this.addSettingTab(new SpecialCalloutsSettingTab(this.app, this));
+    this.registerCommands();
+    this.registerMarkdownPostProcessor((element) => {
+      const callouts = element.querySelectorAll(".callout");
+      callouts.forEach((callout) => {
+        this.processor.processCallout(callout);
+      });
+    });
+    console.log("Special Callouts plugin loaded");
+  }
+  /**
+   * Registers all plugin commands
+   */
+  registerCommands() {
+    this.addCommand({
+      id: "insert-custom-callout",
+      name: "Insert Custom Callout",
+      editorCallback: (editor) => {
+        const styles = this.settings.customStyles;
+        if (styles.length === 0) {
+          const cursor = editor.getCursor();
+          editor.replaceRange("> [!note]\n> ", cursor);
+          editor.setCursor({ line: cursor.line + 1, ch: 2 });
+          return;
+        }
+        const suggester = new CustomCalloutSuggester(this.app, styles, editor);
+        suggester.open();
+      }
+    });
+    this.addCommand({
+      id: "show-metadata-reference",
+      name: "Show Metadata Reference",
+      callback: () => {
+        showMetadataReference();
+      }
+    });
+    this.settings.customStyles.forEach((style) => {
+      this.addCommand({
+        id: `insert-${style.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
+        name: `Insert "${style.name}" callout`,
+        editorCallback: (editor) => {
+          const cursor = editor.getCursor();
+          const calloutText = `> [!${style.name}]
+> `;
+          editor.replaceRange(calloutText, cursor);
+          editor.setCursor({ line: cursor.line + 1, ch: 2 });
+        }
+      });
+    });
+  }
+  onunload() {
+    this.processor.cleanup();
+    console.log("Special Callouts plugin unloaded");
+  }
+  async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+  async saveSettings() {
+    await this.saveData(this.settings);
+    if (this.processor) {
+      this.processor.updateSettings(this.settings);
+    }
+  }
+};
+/**
+ * Special Callouts - Main Plugin Entry Point
+ * Advanced callout styling with grid layouts, custom colors, gradients, glow effects, and multi-column support
+ * 
+ * IMPORTANT: Before modifying this file, read RULES.md for mandatory protocols.
+ * 
+ * @author ahseyg
+ * @license MIT
+ */
