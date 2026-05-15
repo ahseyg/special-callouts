@@ -1,4 +1,4 @@
-# 📘 Special Callouts — Complete Usage Guide
+# Special Callouts — Complete Usage Guide
 
 Everything you need to know about using Special Callouts in Obsidian. From basic styling to advanced dashboard layouts with Dataview integration.
 
@@ -24,7 +24,7 @@ Everything you need to know about using Special Callouts in Obsidian. From basic
 
 ---
 
-## 📝 Basic Syntax
+## Basic Syntax
 
 Add parameters inside parentheses `( )` right after the callout type:
 
@@ -47,7 +47,7 @@ Add parameters inside parentheses `( )` right after the callout type:
 
 ---
 
-## 🎨 Colors & Backgrounds
+## Colors & Backgrounds
 
 ### Background Color — `bg:`
 
@@ -72,7 +72,7 @@ Add parameters inside parentheses `( )` right after the callout type:
 | `teal` | `#1abc9c` | 🩵 |
 | `grey`/`gray` | `#95a5a6` | ⚪ |
 
-> 💡 You can also define your own custom color names in **Settings → Colors → Custom Colors**.
+> You can also define your own custom color names in **Settings → Colors → Custom Colors**.
 
 ### Text Color — `text:`
 
@@ -112,7 +112,7 @@ Two colors separated by a dash `-`:
 
 ---
 
-## 🔤 Typography
+## Typography
 
 ### Font Family — `font:`
 
@@ -130,7 +130,7 @@ Two colors separated by a dash `-`:
 > $ echo "Ready!"
 
 > [!note] (font:hand, bg:#f1c40f, text:#2c3e50, no-icon) Sticky Note
-> Don't forget to buy milk! 🥛
+> Don't forget to buy milk!
 
 > [!note] (font:serif, bg:#fdf2e9, text:#6c3483) Elegant
 > A refined, classic serif appearance.
@@ -153,7 +153,7 @@ Scale from `1` (smallest) to `5` (largest). Default is `3`.
 
 ---
 
-## 📏 Borders & Shapes
+## Borders & Shapes
 
 ### Border Color — `border:`
 
@@ -210,7 +210,7 @@ Value in pixels (0 = sharp corners, 30+ = pill shape):
 
 ---
 
-## ✨ Visual Effects
+## Visual Effects
 
 ### Neon Glow — `neon:`
 
@@ -227,7 +227,7 @@ Adds a colored glowing border + box-shadow:
 > Matrix-style green glow.
 ```
 
-> 💡 **Pro tip:** Neon works best on dark backgrounds. Use a dark `bg:` color for maximum effect.
+> **Pro tip:** Neon works best on dark backgrounds. Use a dark `bg:` color for maximum effect.
 
 ### Hide Icon — `no-icon`
 
@@ -238,7 +238,7 @@ Adds a colored glowing border + box-shadow:
 
 ---
 
-## 🔠 Text Readability Borders
+## Text Readability Borders
 
 When text color is similar to the background, add a stroke border for readability:
 
@@ -271,7 +271,7 @@ Use parentheses to set both color and border in one parameter:
 
 ---
 
-## 📐 Layout: Center & Compact
+## Layout: Center & Compact
 
 ### Center — `center`
 
@@ -305,11 +305,11 @@ Reduces padding for a dense, widget-like appearance:
 > Takes less vertical space.
 ```
 
-> 💡 **Dashboard tip:** Combine `compact` with `multi-callout` grids for information-dense dashboards.
+> **Dashboard tip:** Combine `compact` with `multi-callout` grids for information-dense dashboards.
 
 ---
 
-## 📊 Multi-Column Lists
+## Multi-Column Lists
 
 Split bullet or numbered lists into newspaper-style columns using `col:N`:
 
@@ -356,7 +356,7 @@ Result: Items flow **top-to-bottom, then left-to-right** (newspaper style).
 
 ---
 
-## 🗃️ Dataview Integration
+## Dataview Integration
 
 Special Callouts works seamlessly with [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin. You can pull dynamic data and display it in multi-column layouts.
 
@@ -379,7 +379,7 @@ Pull tasks from your vault and display them in columns:
 Pull lists from multiple sources:
 
 ````markdown
-> [!note] (col:3, bg:#2d3436, text:#dfe6e9) 📚 Reading List
+> [!note] (col:3, bg:#2d3436, text:#dfe6e9) Reading List
 > ```dataview
 > LIST
 > FROM #book AND #to-read
@@ -394,11 +394,11 @@ Pull lists from multiple sources:
 - A **MutationObserver** watches for dynamically added content and re-applies the column layout
 - Works with: `ul`, `ol`, `.dataview`, `.block-language-dataview`, grouped Dataview lists
 
-> ⚠️ **Important:** If you use the Homepage plugin, the retry mechanism ensures columns work on your home page too, even on first load.
+> **Important:** If you use the Homepage plugin, the retry mechanism ensures columns work on your home page too, even on first load.
 
 ---
 
-## 📐 Grid Layout (Multi-Callout)
+## Grid Layout (Multi-Callout)
 
 Create side-by-side callout layouts using the `[!multi-callout]` wrapper.
 
@@ -456,7 +456,7 @@ On screens smaller than 600px, grid columns automatically stack vertically.
 
 ---
 
-## 🎨 Custom Style Presets
+## Custom Style Presets
 
 ### Creating Presets
 
@@ -487,7 +487,7 @@ On screens smaller than 600px, grid columns automatically stack vertically.
 
 ---
 
-## ⚙️ Settings Panel Overview
+## Settings Panel Overview
 
 The plugin settings panel has four main sections:
 
@@ -498,7 +498,7 @@ Two buttons at the top:
 
 ### 2. Custom Callouts
 - **Quick Start Presets:** One-click templates (Ocean Deep, Neon Glow, Forest, Sunset)
-- **🎲 Random:** Generate a random unique style instantly
+- **Random:** Generate a random unique style instantly
 - **Live Preview:** See your callout in real-time as you edit
 - **Identity:** Style name + icon picker (with fuzzy search)
 - **Palette:** Background, border, title, text, and link colors with hex inputs and color pickers
@@ -520,7 +520,7 @@ Modify the default appearance of Obsidian's built-in callout types (note, info, 
 
 ---
 
-## ⌨️ Command Palette
+## Command Palette
 
 Press `Ctrl/Cmd + P` and search for:
 
@@ -530,11 +530,11 @@ Press `Ctrl/Cmd + P` and search for:
 | `Insert "[style-name]" callout` | Directly insert a specific custom style |
 | `Show Metadata Reference` | Open the parameter reference modal |
 
-> 💡 You can assign **hotkeys** to any of these commands in Settings → Hotkeys → Special Callouts.
+> You can assign **hotkeys** to any of these commands in Settings → Hotkeys → Special Callouts.
 
 ---
 
-## 💡 Tips & Tricks
+## Tips & Tricks
 
 ### Combine Multiple Parameters
 ```markdown
@@ -545,12 +545,12 @@ Press `Ctrl/Cmd + P` and search for:
 ### Dataview Dashboard Pattern
 ````markdown
 > [!multi-callout]
-> > [!todo] (1:2, col:2, compact, bg:#1a1a2e, text:#dfe6e9) 📋 Tasks
+> > [!todo] (1:2, col:2, compact, bg:#1a1a2e, text:#dfe6e9) Tasks
 > > ```dataview
 > > TASK FROM "Projects" WHERE !completed LIMIT 10
 > > ```
 >
-> > [!note] (2:2, col:2, compact, bg:#1a1a2e, text:#dfe6e9) 📚 Reading
+> > [!note] (2:2, col:2, compact, bg:#1a1a2e, text:#dfe6e9) Reading
 > > ```dataview
 > > LIST FROM #book AND #to-read LIMIT 10
 > > ```
@@ -558,7 +558,7 @@ Press `Ctrl/Cmd + P` and search for:
 
 ### Sticky Note Style
 ```markdown
-> [!note] (bg:#f1c40f, text:black, font:hand, radius:0, no-icon, compact) 📌
+> [!note] (bg:#f1c40f, text:black, font:hand, radius:0, no-icon, compact) 
 > Quick reminder!
 ```
 
@@ -572,13 +572,13 @@ Press `Ctrl/Cmd + P` and search for:
 
 ### Warning Banner
 ```markdown
-> [!danger] (center, bg:#e74c3c, text:white, font-size:4, neon:#ff0000, radius:0) ⚠️ WARNING
+> [!danger] (center, bg:#e74c3c, text:white, font-size:4, neon:#ff0000, radius:0) WARNING
 > This action cannot be undone!
 ```
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Columns not appearing on page load
 **Cause:** Dataview or Homepage plugin loads content asynchronously.
@@ -598,13 +598,13 @@ Press `Ctrl/Cmd + P` and search for:
 
 ---
 
-## 🤝 Contributing & Bug Reports
+## Contributing & Bug Reports
 
 This plugin is **open source**! We welcome contributions, bug reports, and feature requests.
 
-- 🐛 **Bug Reports:** [Open an issue on GitHub](https://github.com/ahseyg/obsidian-special-callouts/issues)
-- 💡 **Feature Requests:** Same link — we'd love to hear your ideas!
-- 🔧 **Pull Requests:** Fork the repo, make your changes, and submit a PR
+- **Bug Reports:** [Open an issue on GitHub](https://github.com/ahseyg/special-callouts/issues)
+- **Feature Requests:** Same link — we'd love to hear your ideas!
+- **Pull Requests:** Fork the repo, make your changes, and submit a PR
 
 When reporting a bug, please include:
 1. Your Obsidian version
