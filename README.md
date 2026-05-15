@@ -10,7 +10,7 @@ Turn boring generic boxes into magazine-quality layouts, code terminals, or neon
 
 ---
 
-## What's New in v1.0.1
+## What's New in v1.0.2
 
 | Feature | Description |
 |---------|-------------|
