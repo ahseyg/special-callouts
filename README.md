@@ -439,7 +439,7 @@ Press `Ctrl/Cmd + P` and search for:
 4.  Click **Install** then **Enable**
 
 ### Manual Installation
-1.  Download `main.js`, `styles.css`, and `manifest.json` from the [latest release](https://github.com/ahseyg/obsidian-special-callouts/releases)
+1.  Download `main.js`, `styles.css`, and `manifest.json` from the [latest release](https://github.com/ahseyg/special-callouts/releases)
 2.  Create folder: `VaultFolder/.obsidian/plugins/obsidian-special-callouts/`
 3.  Copy the downloaded files to the folder
 4.  Enable the plugin in Obsidian settings
@@ -459,7 +459,7 @@ Copy `main.js`, `styles.css`, and `manifest.json` to your vault's plugin folder.
 
 This plugin is **open source** and we welcome contributions!
 
-- **Bug Reports:** [Open an issue](https://github.com/ahseyg/obsidian-special-callouts/issues) — please include your Obsidian version, the callout markdown, and a screenshot
+- **Bug Reports:** [Open an issue](https://github.com/ahseyg/special-callouts/issues) — please include your Obsidian version, the callout markdown, and a screenshot
 - **Feature Requests:** Same link — we'd love to hear your ideas!
 - **Pull Requests:** Fork, branch, code, PR — all contributions are appreciated
 
