@@ -1,11 +1,10 @@
 {
-	"id": "special-callouts",
+	"id": "obsidian-special-callouts",
 	"name": "Special Callouts",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"minAppVersion": "0.15.0",
-	"description": "Advanced callout styling with grid layouts, custom colors, gradients, glow effects, and multi-column support.",
+	"description": "Customize callouts with metadata in the title (colors, borders, layout, neon effects). and multi-column support.",
 	"author": "ahseyg",
 	"authorUrl": "https://github.com/ahseyg",
 	"isDesktopOnly": false
-
 }

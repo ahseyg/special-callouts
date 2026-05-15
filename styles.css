@@ -1,5 +1,7 @@
 /* Special Callouts - Core Styles */
+/* IMPORTANT: Before modifying this file, read RULES.md for mandatory protocols. */
 
+/* Multi-callout container - makes it invisible wrapper */
 .callout[data-callout="multi-callout"] {
     background: transparent !important;
     border: none !important;
@@ -24,7 +26,7 @@
     border: none !important;
 }
 
-.callout[data-callout="multi-callout"]>.callout-content>.callout {
+.callout[data-callout="multi-callout"]>.callout-content>* {
     box-sizing: border-box !important;
 }
 
@@ -56,9 +58,65 @@
         flex-direction: column !important;
     }
 
-    .callout[data-callout="multi-callout"]>.callout-content>.callout {
+    .callout[data-callout="multi-callout"]>.callout-content>* {
         width: 100% !important;
         max-width: 100% !important;
         flex: none !important;
     }
+}
+
+/* Fix for rounded corners with background */
+.callout {
+    overflow: hidden !important;
+}
+
+/* Text border styles for links */
+.callout[data-link-border="dark-border"] a {
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.callout[data-link-border="light-border"] a {
+    -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.8);
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Fix for multi-callout in reading mode (preview) */
+/* AI_CONTEXT: Reading mode renders callouts differently than edit mode */
+/* AI_CONTEXT_WARN: margin-bottom is needed for spacing between consecutive multi-callouts */
+.markdown-preview-view .callout[data-callout="multi-callout"],
+.markdown-reading-view .callout[data-callout="multi-callout"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 0 10px 0 !important;
+}
+
+.markdown-preview-view .callout[data-callout="multi-callout"]>.callout-title,
+.markdown-reading-view .callout[data-callout="multi-callout"]>.callout-title {
+    display: none !important;
+}
+
+.markdown-preview-view .callout[data-callout="multi-callout"]>.callout-content,
+.markdown-reading-view .callout[data-callout="multi-callout"]>.callout-content {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+.markdown-preview-view .callout[data-callout="multi-callout"]>.callout-content>*,
+.markdown-reading-view .callout[data-callout="multi-callout"]>.callout-content>* {
+    box-sizing: border-box !important;
+    margin: 0 !important;
+}
+
+/* Balanced padding for callouts without visible title content */
+.callout .callout-content:first-child,
+.callout .callout-content:only-child {
+    padding-top: 0.6em;
+    padding-bottom: 0.6em;
 }
