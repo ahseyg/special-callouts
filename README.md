@@ -6,8 +6,6 @@ Turn boring generic boxes into magazine-quality layouts, code terminals, or neon
 
 **Open source** · MIT License · Contributions welcome!
 
-![Demo](assets/demo-banner.png)
-
 ---
 
 ## What's New in v1.0.2
