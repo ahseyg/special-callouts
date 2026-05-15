@@ -412,8 +412,6 @@ The plugin includes a rich visual settings panel accessible from **Settings → 
 | **Standard Colors** | Edit hex values of named colors (red, blue, green...) |
 | **Custom Colors** | Add your own named colors for use in any callout |
 
-![Settings](assets/example-settings.png)
-
 ---
 
 ## Command Palette
