@@ -46,6 +46,13 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
     newCustomColorName = '';
     newCustomColorHex = '#ffffff';
     editingIndex: number | null = null;
+    
+    // Layout Builder State (Persist across display calls)
+    builderCols = 3;
+    builderRows = 2;
+    builderLayoutName = '';
+    builderGridMatrix: number[][] = [[1,2,3], [4,5,6]];
+    builderSelectedCells: {r: number, c: number}[] = [];
 
     // View modes
     stylesViewMode: 'grid' | 'list' = 'grid';
@@ -64,6 +71,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
 
         this.createHeader(containerEl);
         this.createQuickActions(containerEl);
+        this.createGeneralSettings(containerEl);
         this.createLayoutBuilderSection(containerEl);
         this.createCalloutsSection(containerEl);
         this.createColorsSection(containerEl);
@@ -97,20 +105,48 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         quickRefDiv.style.cssText = 'display: flex; gap: 10px; margin-bottom: 2rem;';
 
         const howToBtn = quickRefDiv.createEl('button');
-        howToBtn.style.cssText = 'padding: 10px 20px; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: opacity 0.15s;';
-        howToBtn.onmouseover = () => howToBtn.style.opacity = '0.85';
-        howToBtn.onmouseout = () => howToBtn.style.opacity = '1';
+        // AI_CONTEXT: Sekonder eylem butonlari icin var(--interactive-normal) kullaniliyor
+        // Accent rengi acik/beyaz oldugunda 'color: white' okunaksiz hale geliyordu
+        howToBtn.style.cssText = 'padding: 8px 16px; background: var(--interactive-normal); color: var(--text-normal); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: background 0.15s;';
+        howToBtn.onmouseover = () => howToBtn.style.background = 'var(--interactive-hover)';
+        howToBtn.onmouseout = () => howToBtn.style.background = 'var(--interactive-normal)';
         setIcon(howToBtn.createSpan(), 'help-circle');
         howToBtn.createSpan({ text: 'How to Use' });
         howToBtn.onclick = () => showHowToUse();
 
         const metadataBtn = quickRefDiv.createEl('button');
-        metadataBtn.style.cssText = 'padding: 10px 20px; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: opacity 0.15s;';
-        metadataBtn.onmouseover = () => metadataBtn.style.opacity = '0.85';
-        metadataBtn.onmouseout = () => metadataBtn.style.opacity = '1';
+        metadataBtn.style.cssText = 'padding: 8px 16px; background: var(--interactive-normal); color: var(--text-normal); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: background 0.15s;';
+        metadataBtn.onmouseover = () => metadataBtn.style.background = 'var(--interactive-hover)';
+        metadataBtn.onmouseout = () => metadataBtn.style.background = 'var(--interactive-normal)';
         setIcon(metadataBtn.createSpan(), 'list');
         metadataBtn.createSpan({ text: 'Metadata Reference' });
         metadataBtn.onclick = () => showMetadataReference();
+    }
+
+    private createGeneralSettings(container: HTMLElement): void {
+        const section = container.createDiv();
+        section.style.cssText = 'margin-bottom: 2.5rem;';
+
+        const h1 = section.createEl('h1', { text: 'General Settings' });
+        h1.style.cssText = `
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-accent);
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--background-modifier-border);
+        `;
+
+        new Setting(section)
+            .setName('Default Callout Metadata')
+            .setDesc('Enter the default metadata (e.g. "col:2, bg:ocean") to automatically append when using the "Insert Custom Callout" command.')
+            .addText(text => text
+                .setPlaceholder('col:2, bg:ocean')
+                .setValue(this.plugin.settings.defaultMetadata || '')
+                .onChange(async (value) => {
+                    this.plugin.settings.defaultMetadata = value;
+                    await this.plugin.saveSettings();
+                }));
     }
 
     private createCalloutsSection(container: HTMLElement): void {
@@ -175,37 +211,36 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             margin-bottom: 20px;
         `;
 
-        let cols = 3;
-        let rows = 2;
-        let layoutName = '';
-        let gridMatrix: number[][] = [];
-        let selectedCells: {r: number, c: number}[] = [];
         let isDragging = false;
         let dragStart: {r: number, c: number} | null = null;
         
         const initMatrix = () => {
-            gridMatrix = [];
+            this.builderGridMatrix = [];
             let nextId = 1;
-            for(let r=0; r<rows; r++) {
+            for(let r=0; r<this.builderRows; r++) {
                 let row = [];
-                for(let c=0; c<cols; c++) {
+                for(let c=0; c<this.builderCols; c++) {
                     row.push(nextId++);
                 }
-                gridMatrix.push(row);
+                this.builderGridMatrix.push(row);
             }
         };
-        initMatrix();
+
+        // Ensure matrix exists and matches dimensions (failsafe)
+        if (!this.builderGridMatrix || this.builderGridMatrix.length !== this.builderRows || (this.builderGridMatrix[0]?.length || 0) !== this.builderCols) {
+            initMatrix();
+        }
 
         const normalizeMatrix = () => {
             let currentId = 1;
             let oldToNew = new Map<number, number>();
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    const oldId = gridMatrix[r][c];
+            for(let r=0; r<this.builderRows; r++) {
+                for(let c=0; c<this.builderCols; c++) {
+                    const oldId = this.builderGridMatrix[r][c];
                     if(!oldToNew.has(oldId)) {
                         oldToNew.set(oldId, currentId++);
                     }
-                    gridMatrix[r][c] = oldToNew.get(oldId)!;
+                    this.builderGridMatrix[r][c] = oldToNew.get(oldId)!;
                 }
             }
         };
@@ -218,78 +253,71 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         nameGroup.createEl('label', { text: 'Layout Name' }).style.cssText = 'display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;';
         const nameInput = nameGroup.createEl('input', { type: 'text', placeholder: 'my_dashboard' });
         nameInput.style.cssText = 'padding: 6px 10px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: var(--background-primary); width: 150px;';
-        nameInput.oninput = (e) => layoutName = (e.target as HTMLInputElement).value;
+        nameInput.value = this.builderLayoutName;
+        nameInput.oninput = (e) => this.builderLayoutName = (e.target as HTMLInputElement).value;
 
         const colsGroup = controlsRow.createDiv();
         colsGroup.createEl('label', { text: 'Columns' }).style.cssText = 'display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;';
         const colsSelect = new DropdownComponent(colsGroup);
         [1,2,3,4,5,6,7,8].forEach(n => colsSelect.addOption(n.toString(), n.toString()));
-        colsSelect.setValue('3');
+        colsSelect.setValue(this.builderCols.toString());
 
         const rowsGroup = controlsRow.createDiv();
         rowsGroup.createEl('label', { text: 'Rows' }).style.cssText = 'display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;';
         const rowsSelect = new DropdownComponent(rowsGroup);
         [1,2,3,4,5,6,7,8].forEach(n => rowsSelect.addOption(n.toString(), n.toString()));
-        rowsSelect.setValue('2');
+        rowsSelect.setValue(this.builderRows.toString());
 
         const actionGroup = controlsRow.createDiv();
         actionGroup.style.cssText = 'display: flex; gap: 10px; margin-left: auto;';
         
         const mergeBtn = actionGroup.createEl('button');
-        mergeBtn.style.cssText = 'padding: 6px 12px; background: var(--interactive-accent); color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;';
+        mergeBtn.style.cssText = 'padding: 6px 12px; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;';
         setIcon(mergeBtn.createSpan(), 'combine');
         mergeBtn.createSpan({ text: 'Merge' });
         mergeBtn.onclick = () => {
-            if(selectedCells.length < 2) return;
-            const minR = Math.min(...selectedCells.map(s=>s.r));
-            const maxR = Math.max(...selectedCells.map(s=>s.r));
-            const minC = Math.min(...selectedCells.map(s=>s.c));
-            const maxC = Math.max(...selectedCells.map(s=>s.c));
+            if(this.builderSelectedCells.length < 2) return;
+            const minR = Math.min(...this.builderSelectedCells.map(s=>s.r));
+            const maxR = Math.max(...this.builderSelectedCells.map(s=>s.r));
+            const minC = Math.min(...this.builderSelectedCells.map(s=>s.c));
+            const maxC = Math.max(...this.builderSelectedCells.map(s=>s.c));
             
-            // Check if selected forms a perfect rectangle
-            let isRect = true;
-            let expectedCount = (maxR - minR + 1) * (maxC - minC + 1);
-            if (selectedCells.length !== expectedCount) {
-                // Not a perfect rectangle (e.g. L-shape selection due to partial block overlap)
-                // We'll just force the bounding box to merge
-            }
-            
-            const targetId = gridMatrix[minR][minC];
+            const targetId = this.builderGridMatrix[minR][minC];
             for(let r=minR; r<=maxR; r++) {
                 for(let c=minC; c<=maxC; c++) {
-                    gridMatrix[r][c] = targetId;
+                    this.builderGridMatrix[r][c] = targetId;
                 }
             }
             normalizeMatrix();
-            selectedCells = [];
+            this.builderSelectedCells = [];
             drawGrid();
         };
         
         const splitBtn = actionGroup.createEl('button');
-        splitBtn.style.cssText = 'padding: 6px 12px; background: var(--background-modifier-error); color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;';
+        splitBtn.style.cssText = 'padding: 6px 12px; background: var(--background-modifier-error); color: var(--text-on-accent); border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;';
         setIcon(splitBtn.createSpan(), 'scissors');
         splitBtn.createSpan({ text: 'Split' });
         splitBtn.onclick = () => {
-            if(selectedCells.length === 0) return;
+            if(this.builderSelectedCells.length === 0) return;
             let maxExisting = 0;
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    if(gridMatrix[r][c] > maxExisting) maxExisting = gridMatrix[r][c];
+            for(let r=0; r<this.builderRows; r++) {
+                for(let c=0; c<this.builderCols; c++) {
+                    if(this.builderGridMatrix[r][c] > maxExisting) maxExisting = this.builderGridMatrix[r][c];
                 }
             }
             
-            selectedCells.forEach(s => {
-                const currentId = gridMatrix[s.r][s.c];
-                for(let r=0; r<rows; r++) {
-                    for(let c=0; c<cols; c++) {
-                        if(gridMatrix[r][c] === currentId) {
-                            gridMatrix[r][c] = ++maxExisting;
+            this.builderSelectedCells.forEach(s => {
+                const currentId = this.builderGridMatrix[s.r][s.c];
+                for(let r=0; r<this.builderRows; r++) {
+                    for(let c=0; c<this.builderCols; c++) {
+                        if(this.builderGridMatrix[r][c] === currentId) {
+                            this.builderGridMatrix[r][c] = ++maxExisting;
                         }
                     }
                 }
             });
             normalizeMatrix();
-            selectedCells = [];
+            this.builderSelectedCells = [];
             drawGrid();
         };
 
@@ -299,11 +327,11 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             const children = Array.from(gridContainer.children) as HTMLElement[];
             children.forEach(cell => {
                 const id = parseInt(cell.getAttribute('data-id') || '0');
-                const isSelected = selectedCells.some(s => gridMatrix[s.r]?.[s.c] === id);
+                const isSelected = this.builderSelectedCells.some(s => this.builderGridMatrix[s.r]?.[s.c] === id);
                 if(isSelected) {
                     cell.style.background = 'var(--interactive-accent)';
                     cell.style.borderColor = 'var(--text-accent)';
-                    cell.style.color = 'white';
+                    cell.style.color = 'var(--text-on-accent)';
                     cell.style.transform = 'scale(0.98)';
                 } else {
                     cell.style.background = 'var(--background-secondary)';
@@ -314,12 +342,17 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             });
         };
 
+        const onMouseUp = () => {
+            isDragging = false;
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
         const drawGrid = () => {
             gridContainer.empty();
             gridContainer.style.cssText = `
                 display: grid;
-                grid-template-columns: repeat(${cols}, 1fr);
-                grid-template-rows: repeat(${rows}, 80px);
+                grid-template-columns: repeat(${this.builderCols}, 1fr);
+                grid-template-rows: repeat(${this.builderRows}, 80px);
                 gap: 8px;
                 background: var(--background-primary);
                 padding: 15px;
@@ -330,19 +363,19 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             
             const processed = new Set<number>();
             
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    const id = gridMatrix[r]?.[c];
+            for(let r=0; r<this.builderRows; r++) {
+                for(let c=0; c<this.builderCols; c++) {
+                    const id = this.builderGridMatrix[r]?.[c];
                     if(id === undefined || processed.has(id)) continue;
                     processed.add(id);
                     
                     let maxR = r, maxC = c;
-                    for(let tr=r; tr<rows; tr++) {
-                        if(gridMatrix[tr][c] === id) maxR = tr;
+                    for(let tr=r; tr<this.builderRows; tr++) {
+                        if(this.builderGridMatrix[tr][c] === id) maxR = tr;
                         else break;
                     }
-                    for(let tc=c; tc<cols; tc++) {
-                        if(gridMatrix[r][tc] === id) maxC = tc;
+                    for(let tc=c; tc<this.builderCols; tc++) {
+                        if(this.builderGridMatrix[r][tc] === id) maxC = tc;
                         else break;
                     }
                     
@@ -372,11 +405,12 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                     
                     cell.onmousedown = (e) => {
                         isDragging = true;
+                        document.addEventListener('mouseup', onMouseUp);
                         dragStart = {r, c};
-                        selectedCells = [];
+                        this.builderSelectedCells = [];
                         for(let br=r; br<=maxR; br++) {
                             for(let bc=c; bc<=maxC; bc++) {
-                                selectedCells.push({r: br, c: bc});
+                                this.builderSelectedCells.push({r: br, c: bc});
                             }
                         }
                         updateSelectionVisuals();
@@ -389,10 +423,10 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                             const minCol = Math.min(dragStart.c, c);
                             const maxCol = Math.max(dragStart.c, maxC);
                             
-                            selectedCells = [];
+                            this.builderSelectedCells = [];
                             for(let tr=minRow; tr<=maxRow; tr++) {
                                 for(let tc=minCol; tc<=maxCol; tc++) {
-                                    selectedCells.push({r: tr, c: tc});
+                                    this.builderSelectedCells.push({r: tr, c: tc});
                                 }
                             }
                             updateSelectionVisuals();
@@ -403,20 +437,62 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             updateSelectionVisuals();
         };
 
-        const documentMouseUpListener = () => { isDragging = false; };
-        document.addEventListener('mouseup', documentMouseUpListener);
-        // We handle event cleanup generally by Obsidian's lifecycle, but for safety in settings tab it's usually fine
-        
-        colsSelect.onChange(v => { cols = parseInt(v); initMatrix(); drawGrid(); });
-        rowsSelect.onChange(v => { rows = parseInt(v); initMatrix(); drawGrid(); });
+        colsSelect.onChange(v => { this.builderCols = parseInt(v); initMatrix(); drawGrid(); });
+        rowsSelect.onChange(v => { this.builderRows = parseInt(v); initMatrix(); drawGrid(); });
         drawGrid();
 
         const saveBtnRow = builderCard.createDiv();
-        saveBtnRow.style.cssText = 'margin-top: 20px; display: flex; justify-content: flex-end;';
+        saveBtnRow.style.cssText = 'margin-top: 20px; display: flex; justify-content: space-between; align-items: center;';
+        
+        const ioGroup = saveBtnRow.createDiv();
+        ioGroup.style.cssText = 'display: flex; gap: 8px;';
+
+        const exportBtn = ioGroup.createEl('button');
+        exportBtn.style.cssText = 'padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-size: 0.8rem;';
+        setIcon(exportBtn, 'upload');
+        exportBtn.createSpan({ text: 'Export All' });
+        exportBtn.onclick = () => {
+            const data = this.plugin.settings.customLayouts || [];
+            navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
+                new Notice('All layouts copied to clipboard!');
+            });
+        };
+
+        const importBtn = ioGroup.createEl('button');
+        importBtn.style.cssText = 'padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-size: 0.8rem;';
+        setIcon(importBtn, 'download');
+        importBtn.createSpan({ text: 'Import' });
+        importBtn.onclick = () => {
+            const modal = new Modal(this.app);
+            modal.titleEl.setText('Import Layouts (JSON)');
+            const area = new TextAreaComponent(modal.contentEl);
+            area.placeholder = 'Paste JSON here...';
+            area.inputEl.style.width = '100%';
+            area.inputEl.style.height = '200px';
+            
+            const btn = modal.contentEl.createEl('button', { text: 'Import' });
+            btn.style.cssText = 'margin-top: 10px; width: 100%; padding: 10px; background: var(--interactive-accent); color: white; border: none; border-radius: 6px;';
+            btn.onclick = async () => {
+                try {
+                    const data = JSON.parse(area.getValue());
+                    if (Array.isArray(data)) {
+                        this.plugin.settings.customLayouts = data;
+                        await this.plugin.saveSettings();
+                        new Notice('Layouts imported!');
+                        modal.close();
+                        this.display();
+                    }
+                } catch(e) {
+                    new Notice('Invalid JSON');
+                }
+            };
+            modal.open();
+        };
+
         const saveBtn = saveBtnRow.createEl('button', { text: 'Save Layout' });
-        saveBtn.style.cssText = 'padding: 8px 16px; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;';
+        saveBtn.style.cssText = 'padding: 8px 16px; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 600;';
         saveBtn.onclick = async () => {
-            if (!layoutName) {
+            if (!this.builderLayoutName) {
                 new Notice('Please enter a layout name');
                 return;
             }
@@ -424,22 +500,23 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 this.plugin.settings.customLayouts = [];
             }
             
-            const existingIdx = this.plugin.settings.customLayouts.findIndex(l => l.name === layoutName.toLowerCase().replace(/\s+/g, '_'));
+            const cleanName = this.builderLayoutName.toLowerCase().replace(/\s+/g, '_');
+            const existingIdx = this.plugin.settings.customLayouts.findIndex(l => l.name === cleanName);
             
             // Read matrix
             let gridAreasStr = '';
-            for(let r=0; r<rows; r++) {
+            for(let r=0; r<this.builderRows; r++) {
                 let rowStr = '';
-                for(let c=0; c<cols; c++) {
-                    rowStr += `area${gridMatrix[r][c]} `;
+                for(let c=0; c<this.builderCols; c++) {
+                    rowStr += `area${this.builderGridMatrix[r][c]} `;
                 }
                 gridAreasStr += `"${rowStr.trim()}" `;
             }
             
             const newLayout = {
-                name: layoutName.toLowerCase().replace(/\s+/g, '_'),
-                cols,
-                rows,
+                name: cleanName,
+                cols: this.builderCols,
+                rows: this.builderRows,
                 gridAreas: gridAreasStr.trim()
             };
 
@@ -480,24 +557,24 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 editBtn.title = 'Edit Layout';
                 editBtn.onclick = () => {
                     // Hydrate UI State
-                    cols = layout.cols;
-                    rows = layout.rows;
-                    layoutName = layout.name;
+                    this.builderCols = layout.cols;
+                    this.builderRows = layout.rows;
+                    this.builderLayoutName = layout.name;
                     
-                    colsSelect.setValue(cols.toString());
-                    rowsSelect.setValue(rows.toString());
-                    nameInput.value = layoutName;
+                    colsSelect.setValue(this.builderCols.toString());
+                    rowsSelect.setValue(this.builderRows.toString());
+                    nameInput.value = this.builderLayoutName;
                     
                     // Parse gridAreas string back to matrix
                     const rowsArr = layout.gridAreas.match(/"([^"]+)"/g)?.map(r => r.replace(/"/g, '').trim().split(/\s+/)) || [];
-                    if (rowsArr.length === rows) {
-                        gridMatrix = rowsArr.map(row => row.map(area => parseInt(area.replace('area', ''))));
+                    if (rowsArr.length === this.builderRows) {
+                        this.builderGridMatrix = rowsArr.map(row => row.map(area => parseInt(area.replace('area', ''))));
                     } else {
                         initMatrix(); // Fallback if corrupted
                     }
                     
                     drawGrid();
-                    new Notice(`Editing layout: ${layoutName}`);
+                    new Notice(`Editing layout: ${this.builderLayoutName}`);
                     
                     // Scroll to top of builder
                     builderCard.scrollIntoView({ behavior: 'smooth' });
@@ -535,11 +612,11 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         toggleDiv.style.cssText = 'display: flex; border: 1px solid var(--background-modifier-border); border-radius: 6px; overflow: hidden;';
 
         const gridBtn = toggleDiv.createEl('button', { text: 'Grid' });
-        gridBtn.style.cssText = `padding: 4px 10px; border: none; cursor: pointer; font-size: 0.8rem; ${this.standardStylesViewMode === 'grid' ? 'background: var(--interactive-accent); color: white;' : 'background: var(--background-secondary); color: var(--text-muted);'}`;
+        gridBtn.style.cssText = `padding: 4px 10px; border: none; cursor: pointer; font-size: 0.8rem; ${this.standardStylesViewMode === 'grid' ? 'background: var(--interactive-accent); color: var(--text-on-accent);' : 'background: var(--background-secondary); color: var(--text-muted);'}`;
         gridBtn.onclick = () => { this.standardStylesViewMode = 'grid'; this.display(); };
 
         const listBtn = toggleDiv.createEl('button', { text: 'List' });
-        listBtn.style.cssText = `padding: 4px 10px; border: none; cursor: pointer; font-size: 0.8rem; ${this.standardStylesViewMode === 'list' ? 'background: var(--interactive-accent); color: white;' : 'background: var(--background-secondary); color: var(--text-muted);'}`;
+        listBtn.style.cssText = `padding: 4px 10px; border: none; cursor: pointer; font-size: 0.8rem; ${this.standardStylesViewMode === 'list' ? 'background: var(--interactive-accent); color: var(--text-on-accent);' : 'background: var(--background-secondary); color: var(--text-muted);'}`;
         listBtn.onclick = () => { this.standardStylesViewMode = 'list'; this.display(); };
 
         const standardStyleNames = Object.keys(this.plugin.settings.standardStyles);
@@ -739,7 +816,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         buttons.style.cssText = 'display: flex; gap: 10px;';
 
         const saveBtn = buttons.createEl('button', { text: 'Save' });
-        saveBtn.style.cssText = 'flex: 1; padding: 10px; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;';
+        saveBtn.style.cssText = 'flex: 1; padding: 10px; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;';
         saveBtn.onclick = async () => {
             this.plugin.settings.standardStyles[styleName] = style;
             await this.plugin.saveSettings();
@@ -749,7 +826,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         };
 
         const resetBtn = buttons.createEl('button', { text: 'Reset' });
-        resetBtn.style.cssText = 'padding: 10px 20px; background: var(--background-modifier-error); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;';
+        resetBtn.style.cssText = 'padding: 10px 20px; background: var(--background-modifier-error); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;';
         resetBtn.onclick = async () => {
             this.plugin.settings.standardStyles[styleName] = { ...DEFAULT_STANDARD_STYLES[styleName] };
             await this.plugin.saveSettings();
@@ -792,10 +869,10 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
 
         if (this.editingIndex !== null) {
             const banner = section.createDiv();
-            banner.style.cssText = 'background: var(--interactive-accent); color: white; padding: 10px 16px; border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;';
+            banner.style.cssText = 'background: var(--interactive-accent); color: var(--text-on-accent); padding: 10px 16px; border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;';
             banner.createSpan({ text: `Editing: ${this.tempName || 'Untitled'}` }).style.fontWeight = '500';
             const cancelBtn = banner.createEl('button', { text: 'Cancel' });
-            cancelBtn.style.cssText = 'background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer;';
+            cancelBtn.style.cssText = 'background: rgba(128,128,128,0.2); border: none; color: var(--text-on-accent); padding: 6px 12px; border-radius: 4px; cursor: pointer;';
             cancelBtn.onclick = () => {
                 this.editingIndex = null;
                 this.resetForm();
@@ -1176,7 +1253,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         };
 
         const saveBtn = row.createEl('button', { text: this.editingIndex !== null ? 'Update Style' : 'Create Style' });
-        saveBtn.style.cssText = 'background: var(--interactive-accent); color: white; border: none; padding: 8px 24px; border-radius: 4px; font-weight: 600; cursor: pointer;';
+        saveBtn.style.cssText = 'background: var(--interactive-accent); color: var(--text-on-accent); border: none; padding: 8px 24px; border-radius: 4px; font-weight: 600; cursor: pointer;';
         saveBtn.onclick = async () => {
             await this.saveCurrentStyle();
             this.resetForm();
@@ -1508,7 +1585,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                     if (errorDiv) errorDiv.remove();
 
                     const error = creatorCard.createDiv({ cls: 'duplicate-error' });
-                    error.style.cssText = 'padding: 10px; background: #ff5252; color: white; border-radius: 6px; margin-top: 10px; font-size: 0.9rem;';
+                    error.style.cssText = 'padding: 10px; background: var(--background-modifier-error); color: var(--text-on-accent); border-radius: 6px; margin-top: 10px; font-size: 0.9rem;';
                     error.textContent = `A style named "${this.tempName}" already exists. Please use a different name.`;
 
                     setTimeout(() => error.remove(), 3000);
@@ -1746,7 +1823,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         });
 
         const addBtn = addColorRow.createEl('button', { text: 'Add' });
-        addBtn.style.cssText = 'padding: 8px 20px; background: var(--interactive-accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;';
+        addBtn.style.cssText = 'padding: 8px 20px; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 4px; cursor: pointer; font-weight: 500;';
         addBtn.onclick = async () => {
             if (this.newCustomColorName.trim() && isValidHex(this.newCustomColorHex)) {
                 this.plugin.settings.customColors.push({

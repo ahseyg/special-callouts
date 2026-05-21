@@ -56,13 +56,13 @@ export function showHowToUse(): void {
             </ul>
         </div>
 
-        <div style="background: linear-gradient(135deg, #667eea 15%, #764ba2 85%); padding: 1rem; border-radius: 6px; color: white;">
+        <div style="background: linear-gradient(135deg, #667eea 15%, #764ba2 85%); padding: 1rem; border-radius: 6px; color: var(--text-on-accent);">
             <strong>⚡ Quick Tip:</strong> Assign hotkeys to your favorite styles in Settings → Hotkeys → Special Callouts
         </div>
     `;
 
     const closeBtn = modal.createEl('button', { text: 'Got it!' });
-    closeBtn.style.cssText = 'margin-top: 1.5rem; padding: 0.6rem 1.5rem; background: var(--interactive-accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; width: 100%;';
+    closeBtn.style.cssText = 'margin-top: 1.5rem; padding: 0.6rem 1.5rem; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 500; width: 100%;';
     closeBtn.onclick = () => {
         modal.remove();
         overlay.remove();

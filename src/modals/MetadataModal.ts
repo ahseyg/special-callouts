@@ -109,7 +109,7 @@ export function showMetadataReference(): void {
         margin-top: 2rem;
         padding: 0.8rem 1.5rem;
         background: var(--interactive-accent);
-        color: white;
+        color: var(--text-on-accent);
         border: none;
         border-radius: 8px;
         cursor: pointer;

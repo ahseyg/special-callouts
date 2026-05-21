@@ -48,7 +48,8 @@ export const DEFAULT_SETTINGS: SpecialCalloutsSettings = {
     standardColors: { ...DEFAULT_STANDARD_COLORS },
     customStyles: [],
     standardStyles: { ...DEFAULT_STANDARD_STYLES },
-    customLayouts: []
+    customLayouts: [],
+    defaultMetadata: ''
 };
 
 /**
@@ -75,7 +76,8 @@ export const DEFAULT_CALLOUT_CONFIG: CalloutConfig = {
     compact: false,
     noIcon: false,
     center: false,
-    titleCenter: false
+    titleCenter: false,
+    icon: null
 };
 
 /**

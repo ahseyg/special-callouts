@@ -181,6 +181,9 @@ export function parseMetadata(
             case 'center':
                 config.center = true;
                 break;
+            case 'icon':
+                config.icon = rawValue.toLowerCase();
+                break;
         }
     });
 

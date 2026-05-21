@@ -9,6 +9,7 @@ import { CalloutStyle, CalloutConfig, SpecialCalloutsSettings } from './types';
 import { DEFAULT_STANDARD_STYLES, FONT_FAMILIES, FONT_SIZES } from './constants';
 import { resolveColor, applyTextBorder, debounce } from './utils';
 import { parseMetadata, parseGridLayout, extractMetadata } from './parser';
+import { setIcon } from 'obsidian';
 
 /**
  * CalloutProcessor handles all callout styling operations
@@ -206,6 +207,21 @@ export class CalloutProcessor {
         if (config.noIcon) {
             const icon = calloutEl.querySelector('.callout-icon');
             if (icon) (icon as HTMLElement).style.display = 'none';
+        } else if (config.icon) {
+            let iconEl = calloutEl.querySelector('.callout-icon');
+            if (!iconEl) {
+                // AI_CONTEXT: Eger icon elementi yoksa (bazı temalar/ayarlar) baslıgın basına ekliyoruz
+                const titleEl = calloutEl.querySelector('.callout-title');
+                if (titleEl) {
+                    iconEl = titleEl.createDiv({ cls: 'callout-icon' });
+                    titleEl.prepend(iconEl);
+                }
+            }
+            if (iconEl) {
+                (iconEl as HTMLElement).empty();
+                setIcon(iconEl as HTMLElement, config.icon);
+                (iconEl as HTMLElement).style.display = ''; // Ensure it's visible
+            }
         }
 
         if (config.border) {
@@ -317,7 +333,8 @@ export class CalloutProcessor {
             const c2 = resolveColor(colors[1], this.settings.standardColors, this.settings.customColors);
             calloutEl.style.background = `linear-gradient(90deg, ${c1}, ${c2})`;
             calloutEl.style.border = 'none';
-            calloutEl.style.color = 'white';
+            // AI_CONTEXT: Tema kontrast uyumu için sabit "white" yerine Obsidian değişkeni kullanıldı
+            calloutEl.style.color = 'var(--text-normal)';
         }
     }
 
@@ -501,6 +518,20 @@ export class CalloutProcessor {
             calloutEl.classList.add('no-icon');
             const icon = calloutEl.querySelector('.callout-icon');
             if (icon) (icon as HTMLElement).style.display = 'none';
+        } else if (style.icon) {
+            let iconEl = calloutEl.querySelector('.callout-icon');
+            if (!iconEl) {
+                const titleEl = calloutEl.querySelector('.callout-title');
+                if (titleEl) {
+                    iconEl = titleEl.createDiv({ cls: 'callout-icon' });
+                    titleEl.prepend(iconEl);
+                }
+            }
+            if (iconEl) {
+                (iconEl as HTMLElement).empty();
+                setIcon(iconEl as HTMLElement, style.icon);
+                (iconEl as HTMLElement).style.display = '';
+            }
         }
 
         if (style.compact) {
@@ -588,10 +619,14 @@ export class CalloutProcessor {
             const contentEl = container.querySelector('.callout-content');
             if (!contentEl) return;
 
-            const lists = contentEl.querySelectorAll('ul, ol, .dataview.list-view-ul, .dataview-result-list-ul, .dataview ul, .block-language-dataview ul');
+            // AI_CONTEXT: Live Preview ve MCL uyumluluğu için genişletilmiş seçiciler.
+            // .cm-embed-block ve .markdown-rendered içindeki listeler de yakalanır.
+            const lists = contentEl.querySelectorAll('ul, ol, .dataview.list-view-ul, .dataview-result-list-ul, .dataview ul, .block-language-dataview ul, .cm-embed-block ul, .cm-embed-block ol, .markdown-rendered ul, .markdown-rendered ol');
+            
             lists.forEach(list => {
                 const listEl = list as HTMLElement;
-                const items = listEl.querySelectorAll(':scope > li');
+                // AI_CONTEXT: Sadece doğrudan çocukları işle (iç içe geçmiş listeleri bozmamak için)
+                const items = listEl.querySelectorAll(':scope > li, :scope > .list-item');
                 const itemCount = items.length;
 
                 if (itemCount === 0) return;
@@ -644,7 +679,7 @@ export class CalloutProcessor {
                 const contentEl = calloutEl.querySelector('.callout-content');
                 if (!contentEl) return;
 
-                const lists = contentEl.querySelectorAll('ul, ol, .dataview.list-view-ul, .dataview-result-list-ul, .dataview ul, .block-language-dataview ul');
+                const lists = contentEl.querySelectorAll('ul, ol, .dataview.list-view-ul, .dataview-result-list-ul, .dataview ul, .block-language-dataview ul, .cm-embed-block ul, .cm-embed-block ol, .markdown-rendered ul, .markdown-rendered ol');
                 if (lists.length > 0) {
                     this.applyColumnsToContainer(calloutEl, colCount);
                 }
@@ -665,15 +700,24 @@ export class CalloutProcessor {
 
         const observer = new MutationObserver((mutations) => {
             let update = false;
-            mutations.forEach(m => m.addedNodes.forEach(n => {
-                if (n.nodeType === 1 && ((n as Element).matches('ul,ol,.dataview') || (n as Element).querySelector('ul,ol,.dataview'))) {
-                    update = true;
+            mutations.forEach(m => {
+                if (m.addedNodes.length > 0) {
+                    m.addedNodes.forEach(n => {
+                        if (n.nodeType === 1) {
+                            const el = n as Element;
+                            if (el.matches('ul,ol,.dataview,.cm-embed-block,.markdown-rendered') || el.querySelector('ul,ol,.dataview,.cm-embed-block,.markdown-rendered')) {
+                                update = true;
+                            }
+                        }
+                    });
                 }
-            }));
+                // Text change inside could mean dataview re-rendered
+                if (m.type === 'characterData') update = true;
+            });
             if (update) this.debouncedColumnApply(calloutEl, colCount);
         });
 
-        observer.observe(contentEl, { childList: true, subtree: true });
+        observer.observe(contentEl, { childList: true, subtree: true, characterData: true });
         this.observers.set(calloutEl, observer);
     }
 

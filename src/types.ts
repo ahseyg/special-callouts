@@ -46,6 +46,8 @@ export interface SpecialCalloutsSettings {
     customStyles: Array<CalloutStyle>;
     standardStyles: Record<string, CalloutStyle>;
     customLayouts: Array<CustomLayout>;
+    // AI_CONTEXT: Kullanıcının "Insert Custom Callout" komutunda son kullandığı veya tercih ettiği varsayılan metadata şablonu
+    defaultMetadata?: string;
 }
 
 /**
@@ -73,6 +75,7 @@ export interface CalloutConfig {
     noIcon: boolean;
     center: boolean;
     titleCenter: boolean;
+    icon: string | null;
 }
 
 /**

@@ -1,7 +1,7 @@
 {
 	"id": "special-callouts",
 	"name": "Special Callouts",
-	"version": "1.0.2",
+	"version": "1.0.3-beta.1",
 	"minAppVersion": "0.15.0",
 	"description": "Customize callouts with metadata in the title (colors, borders, layout, neon effects). and multi-column support.",
 	"author": "ahseyg",
