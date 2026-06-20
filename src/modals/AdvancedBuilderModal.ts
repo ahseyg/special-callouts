@@ -52,7 +52,7 @@ export class AdvancedBuilderModal extends Modal {
             .setDesc('Choose a Lucide icon');
         
         const iconPreview = iconSetting.nameEl.createSpan();
-        iconPreview.style.marginLeft = '10px';
+        iconPreview.setCssStyles({ 'marginLeft': '10px' });
         if (this.icon) setIcon(iconPreview, this.icon);
 
         iconSetting.addButton(btn => btn

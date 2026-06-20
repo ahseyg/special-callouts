@@ -27,9 +27,8 @@ export class CustomCalloutSuggester extends SuggestModal<CalloutStyle> {
     }
 
     renderSuggestion(style: CalloutStyle, el: HTMLElement): void {
-        el.setCssProps({
-            'display': 'flex',
-            'align-items': 'center',
+        el.setCssStyles({'display': 'flex',
+            'alignItems': 'center',
             'gap': '10px',
             'padding': '4px 0',
         });
@@ -45,7 +44,7 @@ export class CustomCalloutSuggester extends SuggestModal<CalloutStyle> {
         });
 
         const info = el.createDiv();
-        info.setCssProps({ 'flex': '1', 'min-width': '0' });
+        info.setCssStyles({'flex': '1', 'minWidth': '0' });
 
         const nameEl = info.createDiv({ text: style.name });
         nameEl.setCssProps({

@@ -71,38 +71,52 @@ class MetadataReferenceModal extends Modal {
         ]);
 
         // Presets
-        this.createTable(contentEl, '⚡ Presets', [
-            ['style:my-style', 'Apply saved custom style'],
-        ]);
-
         // Example box
         const exampleBox = contentEl.createDiv();
-        exampleBox.style.setProperty('background', 'var(--background-primary-alt)');
-        exampleBox.style.setProperty('padding', '1rem');
-        exampleBox.style.setProperty('border-radius', '8px');
-        exampleBox.style.setProperty('border', '1px solid var(--background-modifier-border)');
-        exampleBox.style.setProperty('margin-bottom', '1rem');
-        exampleBox.createEl('strong', { text: '💡 Example:' }).style.setProperty('color', 'var(--text-accent)');
+        exampleBox.setCssStyles({ 'background': 'var(--background-primary-alt)' });
+        exampleBox.setCssStyles({ 'padding': '1rem' });
+        exampleBox.setCssStyles({ 'borderRadius': '8px' });
+        exampleBox.setCssStyles({ 'border': '1px solid var(--background-modifier-border)' });
+        exampleBox.setCssStyles({ 'marginBottom': '1rem' });
+        exampleBox.createEl('strong', { text: '💡 Example:' }).setCssStyles({ 'color': 'var(--text-accent)' });
         exampleBox.createEl('br');
         const exCode = exampleBox.createEl('code', {
             text: '(bg:#1a1a2e, text:(white, dark-border), neon:#00f2ff, radius:10)',
         });
-        exCode.style.setProperty('display', 'block');
-        exCode.style.setProperty('margin-top', '0.5rem');
-        exCode.style.setProperty('padding', '0.5rem');
-        exCode.style.setProperty('background', 'var(--background-secondary)');
-        exCode.style.setProperty('border-radius', '4px');
+        exCode.setCssStyles({ 'display': 'block' });
+        exCode.setCssStyles({ 'marginTop': '0.5rem' });
+        exCode.setCssStyles({ 'padding': '0.5rem' });
+        exCode.setCssStyles({ 'background': 'var(--background-secondary)' });
+        exCode.setCssStyles({ 'borderRadius': '4px' });
 
         // Pro tip box
         const tipBox = contentEl.createDiv();
-        tipBox.style.setProperty('background', 'var(--background-primary-alt)');
-        tipBox.style.setProperty('padding', '1rem');
-        tipBox.style.setProperty('border-radius', '8px');
-        tipBox.style.setProperty('border', '1px solid var(--background-modifier-border)');
-        tipBox.createEl('strong', { text: 'Pro Tip: ' }).style.setProperty('color', 'var(--text-accent)');
+        tipBox.setCssStyles({ 'background': 'var(--background-primary-alt)' });
+        tipBox.setCssStyles({ 'padding': '1rem' });
+        tipBox.setCssStyles({ 'borderRadius': '8px' });
+        tipBox.setCssStyles({ 'border': '1px solid var(--background-modifier-border)' });
+        tipBox.createEl('strong', { text: 'Pro Tip: ' }).setCssStyles({ 'color': 'var(--text-accent)' });
         tipBox.appendText('Use ');
         tipBox.createEl('code', { text: 'Ctrl/Cmd+P' });
-        tipBox.appendText(' and type "Insert Custom Callout" to quickly access your styles.');
+        tipBox.appendText(' to open the command palette and type "Special Callouts" to see all available commands.');
+        tipBox.setCssStyles({ 'marginBottom': '1rem' });
+
+        // Available Modifiers Table
+        this.createTable(contentEl, '🎨 Style & Colors', [
+            ['bg:color', 'Background color (hex or named)'],
+            ['text:color', 'Text color'],
+            ['border:color', 'Border color (or "none")'],
+            ['neon:color', 'Glowing border effect'],
+            ['radius:10', 'Corner radius in pixels'],
+            ['title:color', 'Title color'],
+        ]);
+
+        this.createTable(contentEl, '📐 Layout & Structure', [
+            ['col:2', 'Split content into 2 columns'],
+            ['col:3', 'Split content into 3 columns'],
+            ['center', 'Center align all text'],
+            ['no-icon', 'Hide the callout icon'],
+        ]);
     }
 
     onClose(): void {
@@ -111,34 +125,34 @@ class MetadataReferenceModal extends Modal {
 
     private createTable(container: HTMLElement, title: string, rows: [string, string][]): void {
         const section = container.createDiv();
-        section.style.setProperty('margin-bottom', '2rem');
+        section.setCssStyles({ 'marginBottom': '2rem' });
 
         const h3 = section.createEl('h3', { text: title });
-        h3.style.setProperty('margin', '0 0 1rem 0');
-        h3.style.setProperty('font-weight', '600');
-        h3.style.setProperty('border-bottom', '2px solid var(--interactive-accent)');
-        h3.style.setProperty('padding-bottom', '0.5rem');
+        h3.setCssStyles({ 'margin': '0 0 1rem 0' });
+        h3.setCssStyles({ 'fontWeight': '600' });
+        h3.setCssStyles({ 'borderBottom': '2px solid var(--interactive-accent)' });
+        h3.setCssStyles({ 'paddingBottom': '0.5rem' });
 
         const table = section.createEl('table');
-        table.style.setProperty('width', '100%');
-        table.style.setProperty('border-collapse', 'collapse');
-        table.style.setProperty('font-size', '0.9rem');
+        table.setCssStyles({ 'width': '100%' });
+        table.setCssStyles({ 'borderCollapse': 'collapse' });
+        table.setCssStyles({ 'fontSize': '0.9rem' });
 
         rows.forEach(([param, desc], i) => {
             const tr = table.createEl('tr');
             const isLast = i === rows.length - 1;
 
             const td1 = tr.createEl('td');
-            td1.style.setProperty('padding', '10px 0');
-            td1.style.setProperty('width', '45%');
-            td1.style.setProperty('color', 'var(--code-normal)');
-            if (!isLast) td1.style.setProperty('border-bottom', '1px solid var(--background-modifier-border)');
+            td1.setCssStyles({ 'padding': '10px 0' });
+            td1.setCssStyles({ 'width': '45%' });
+            td1.setCssStyles({ 'color': 'var(--code-normal)' });
+            if (!isLast) td1.setCssStyles({ 'borderBottom': '1px solid var(--background-modifier-border)' });
             td1.createEl('code', { text: param });
 
             const td2 = tr.createEl('td');
-            td2.style.setProperty('padding', '10px 0');
-            td2.style.setProperty('color', 'var(--text-muted)');
-            if (!isLast) td2.style.setProperty('border-bottom', '1px solid var(--background-modifier-border)');
+            td2.setCssStyles({ 'padding': '10px 0' });
+            td2.setCssStyles({ 'color': 'var(--text-muted)' });
+            if (!isLast) td2.setCssStyles({ 'borderBottom': '1px solid var(--background-modifier-border)' });
             td2.setText(desc);
         });
     }

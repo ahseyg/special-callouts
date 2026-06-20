@@ -48,8 +48,8 @@ class HowToModal extends Modal {
             p1.createEl('code', { text: '(position:cols)' });
 
             const code1 = section.createEl('code');
-            code1.style.setProperty('display', 'block');
-            code1.style.setProperty('margin-bottom', '1rem');
+            code1.setCssStyles({ 'display': 'block' });
+            code1.setCssStyles({ 'marginBottom': '1rem' });
             code1.setText('> [!multi-callout]\n> > [!info] (1:2)\n> > [!tip] (2:2)');
 
             const p2 = section.createEl('p');
@@ -80,10 +80,10 @@ class HowToModal extends Modal {
         banner.setCssProps({
             '--banner-bg': 'linear-gradient(135deg, #667eea 15%, #764ba2 85%)',
         });
-        banner.style.setProperty('background', 'linear-gradient(135deg, #667eea 15%, #764ba2 85%)');
-        banner.style.setProperty('padding', '1rem');
-        banner.style.setProperty('border-radius', '6px');
-        banner.style.setProperty('color', 'var(--text-on-accent)');
+        banner.setCssStyles({ 'background': 'linear-gradient(135deg, #667eea 15%, #764ba2 85%)' });
+        banner.setCssStyles({ 'padding': '1rem' });
+        banner.setCssStyles({ 'borderRadius': '6px' });
+        banner.setCssStyles({ 'color': 'var(--text-on-accent)' });
         banner.createEl('strong', { text: '⚡ Quick Tip: ' });
         banner.appendText('Assign hotkeys to your favorite styles in Settings → Hotkeys → Special Callouts');
     }
@@ -94,19 +94,19 @@ class HowToModal extends Modal {
 
     private createSection(container: HTMLElement, title: string, fill: (el: HTMLElement) => void): void {
         const section = container.createDiv();
-        section.style.setProperty('margin-bottom', '1.5rem');
+        section.setCssStyles({ 'marginBottom': '1.5rem' });
         const h3 = section.createEl('h3', { text: title });
-        h3.style.setProperty('margin', '0 0 0.75rem 0');
-        h3.style.setProperty('color', 'var(--interactive-accent)');
+        h3.setCssStyles({ 'margin': '0 0 0.75rem 0' });
+        h3.setCssStyles({ 'color': 'var(--interactive-accent)' });
         fill(section);
     }
 
     private createMethodBox(container: HTMLElement, label: string, code: string): void {
         const box = container.createDiv();
-        box.style.setProperty('margin-bottom', '1rem');
-        box.style.setProperty('padding', '1rem');
-        box.style.setProperty('background', 'var(--background-secondary)');
-        box.style.setProperty('border-radius', '6px');
+        box.setCssStyles({ 'marginBottom': '1rem' });
+        box.setCssStyles({ 'padding': '1rem' });
+        box.setCssStyles({ 'background': 'var(--background-secondary)' });
+        box.setCssStyles({ 'borderRadius': '6px' });
         box.createEl('strong', { text: label });
         box.createEl('br');
         box.createEl('code', { text: code });

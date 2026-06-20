@@ -7,7 +7,7 @@
 
 import { CalloutStyle, CalloutConfig, SpecialCalloutsSettings } from './types';
 import { DEFAULT_STANDARD_STYLES, FONT_FAMILIES, FONT_SIZES } from './constants';
-import { resolveColor, applyTextBorder, debounce } from './utils';
+import { resolveColor, applyTextBorder, debounce, setImportantStyle } from './utils';
 import { parseMetadata, parseGridLayout, extractMetadata } from './parser';
 import { setIcon } from 'obsidian';
 
@@ -150,7 +150,7 @@ export class CalloutProcessor {
         // Handle column layout for lists
         if (config.col !== null) {
             calloutEl.setAttribute('data-col', config.col.toString());
-            calloutEl.style.setProperty('--smart-list-cols', config.col.toString());
+            calloutEl.setCssProps({ '--smart-list-cols': config.col.toString() });
             this.applyColumnsToContainer(calloutEl, config.col);
             this.setupObserver(calloutEl, config.col);
             // AI_CONTEXT: Retry mechanism required because Dataview/Homepage plugins load content asynchronously
@@ -194,9 +194,9 @@ export class CalloutProcessor {
 
         if (config.titleColor) {
             const title = calloutEl.querySelector('.callout-title');
-            if (title) (title as HTMLElement).style.color = config.titleColor;
+            if (title) (title as HTMLElement).setCssStyles({ 'color': config.titleColor });
             const icon = calloutEl.querySelector('.callout-icon');
-            if (icon) (icon as HTMLElement).style.color = config.titleColor;
+            if (icon) (icon as HTMLElement).setCssStyles({ 'color': config.titleColor });
         }
 
         if (config.titleBorder) {
@@ -206,7 +206,7 @@ export class CalloutProcessor {
 
         if (config.noIcon) {
             const icon = calloutEl.querySelector('.callout-icon');
-            if (icon) (icon as HTMLElement).style.display = 'none';
+            if (icon) (icon as HTMLElement).setCssStyles({ 'display': 'none' });
         } else if (config.icon) {
             let iconEl = calloutEl.querySelector('.callout-icon');
             if (!iconEl) {
@@ -220,38 +220,38 @@ export class CalloutProcessor {
             if (iconEl) {
                 (iconEl as HTMLElement).empty();
                 setIcon(iconEl as HTMLElement, config.icon);
-                (iconEl as HTMLElement).style.display = ''; // Ensure it's visible
+                (iconEl as HTMLElement).setCssStyles({ 'display': '' }); // Ensure it's visible
             }
         }
 
         if (config.border) {
             if (config.border === 'none') {
-                calloutEl.style.setProperty('border', 'none', 'important');
+                setImportantStyle(calloutEl, 'border', 'none');
             } else {
                 // Default to solid if not specified, but respect border-style if present
                 const style = config.borderStyle || 'solid';
-                calloutEl.style.setProperty('border', `1px ${style} ${config.border}`, 'important');
+                setImportantStyle(calloutEl, 'border', `1px ${style} ${config.border}`);
             }
         }
 
         if (config.borderWidth) {
-            calloutEl.style.borderWidth = config.borderWidth + 'px';
+            calloutEl.setCssStyles({ 'borderWidth': config.borderWidth + 'px' });
         }
 
         if (config.borderStyle && !config.border) {
             // If style is set but color isn't, use current border color or default
-            calloutEl.style.borderStyle = config.borderStyle;
+            calloutEl.setCssStyles({ 'borderStyle': config.borderStyle });
         }
 
         if (config.radius) {
-            calloutEl.style.borderRadius = config.radius + 'px';
-            calloutEl.style.overflow = 'hidden';
+            calloutEl.setCssStyles({ 'borderRadius': config.radius + 'px' });
+            calloutEl.setCssStyles({ 'overflow': 'hidden' });
         }
 
         if (config.neon) {
             const neonBorder = `2px solid ${config.neon}`;
-            calloutEl.style.setProperty('border', neonBorder, 'important');
-            calloutEl.style.boxShadow = `0 0 8px 2px ${config.neon}40, inset 0 0 8px 2px ${config.neon}20`;
+            setImportantStyle(calloutEl, 'border', neonBorder);
+            calloutEl.setCssStyles({ 'boxShadow': `0 0 8px 2px ${config.neon}40, inset 0 0 8px 2px ${config.neon}20` });
         }
 
         if (config.gradient) {
@@ -259,15 +259,15 @@ export class CalloutProcessor {
         }
 
         if (config.font && FONT_FAMILIES[config.font]) {
-            calloutEl.style.setProperty('--font-interface', FONT_FAMILIES[config.font]);
-            calloutEl.style.setProperty('font-family', FONT_FAMILIES[config.font], 'important');
+            calloutEl.setCssProps({ '--font-interface': FONT_FAMILIES[config.font] });
+            setImportantStyle(calloutEl, 'font-family', FONT_FAMILIES[config.font]);
         }
 
         if (config.fontSize && FONT_SIZES[config.fontSize]) {
-            calloutEl.style.fontSize = FONT_SIZES[config.fontSize];
+            calloutEl.setCssStyles({ 'fontSize': FONT_SIZES[config.fontSize] });
             // Ensure title scales slightly differently or stays readable if needed
             const title = calloutEl.querySelector('.callout-title');
-            if (title) (title as HTMLElement).style.fontSize = '1em'; // reset title relative to container
+            if (title) (title as HTMLElement).setCssStyles({ 'fontSize': '1em' }); // reset title relative to container
         }
 
         // AI_CONTEXT: Compact mode reduces padding throughout the callout
@@ -279,46 +279,46 @@ export class CalloutProcessor {
             calloutEl.setAttribute('data-compact', 'true');
 
             // Reduce main callout padding
-            calloutEl.style.setProperty('padding', '0.3em', 'important');
+            setImportantStyle(calloutEl, 'padding', '0.3em');
 
             // Reduce title padding
             const title = calloutEl.querySelector('.callout-title');
             if (title) {
-                (title as HTMLElement).style.setProperty('padding', '0.3em 0.6em', 'important');
-                (title as HTMLElement).style.setProperty('min-height', 'auto', 'important');
+                setImportantStyle((title as HTMLElement), 'padding', '0.3em 0.6em');
+                setImportantStyle((title as HTMLElement), 'min-height', 'auto');
             }
 
             // Reduce content padding
             const content = calloutEl.querySelector('.callout-content');
             if (content) {
-                (content as HTMLElement).style.setProperty('padding', '0.3em 0.6em', 'important');
+                setImportantStyle((content as HTMLElement), 'padding', '0.3em 0.6em');
             }
         }
 
         // AI_CONTEXT: Center mode aligns everything to the center
         if (config.center) {
-            calloutEl.style.setProperty('text-align', 'center', 'important');
-            calloutEl.style.setProperty('align-items', 'center', 'important');
+            setImportantStyle(calloutEl, 'text-align', 'center');
+            setImportantStyle(calloutEl, 'align-items', 'center');
 
             const title = calloutEl.querySelector('.callout-title');
             if (title) {
-                (title as HTMLElement).style.setProperty('justify-content', 'center', 'important');
-                (title as HTMLElement).style.setProperty('text-align', 'center', 'important');
+                setImportantStyle((title as HTMLElement), 'justify-content', 'center');
+                setImportantStyle((title as HTMLElement), 'text-align', 'center');
             }
 
             const content = calloutEl.querySelector('.callout-content');
             if (content) {
-                (content as HTMLElement).style.setProperty('text-align', 'center', 'important');
+                setImportantStyle((content as HTMLElement), 'text-align', 'center');
                 // Ensure block level elements are also centered if possible
-                (content as HTMLElement).style.setProperty('display', 'flex', 'important');
-                (content as HTMLElement).style.setProperty('flex-direction', 'column', 'important');
-                (content as HTMLElement).style.setProperty('align-items', 'center', 'important');
+                setImportantStyle((content as HTMLElement), 'display', 'flex');
+                setImportantStyle((content as HTMLElement), 'flex-direction', 'column');
+                setImportantStyle((content as HTMLElement), 'align-items', 'center');
             }
         } else if (config.titleCenter) {
             const title = calloutEl.querySelector('.callout-title');
             if (title) {
-                (title as HTMLElement).style.setProperty('justify-content', 'center', 'important');
-                (title as HTMLElement).style.setProperty('text-align', 'center', 'important');
+                setImportantStyle((title as HTMLElement), 'justify-content', 'center');
+                setImportantStyle((title as HTMLElement), 'text-align', 'center');
             }
         }
     }
@@ -331,10 +331,10 @@ export class CalloutProcessor {
         if (colors.length === 2) {
             const c1 = resolveColor(colors[0], this.settings.standardColors, this.settings.customColors);
             const c2 = resolveColor(colors[1], this.settings.standardColors, this.settings.customColors);
-            calloutEl.style.background = `linear-gradient(90deg, ${c1}, ${c2})`;
-            calloutEl.style.border = 'none';
+            calloutEl.setCssStyles({ 'background': `linear-gradient(90deg, ${c1}, ${c2})` });
+            calloutEl.setCssStyles({ 'border': 'none' });
             // AI_CONTEXT: Tema kontrast uyumu için sabit "white" yerine Obsidian değişkeni kullanıldı
-            calloutEl.style.color = 'var(--text-normal)';
+            calloutEl.setCssStyles({ 'color': 'var(--text-normal)' });
         }
     }
 
@@ -360,12 +360,12 @@ export class CalloutProcessor {
      */
     private neutralizeWrapper(wrapper: HTMLElement): void {
         if (wrapper.tagName === 'BLOCKQUOTE') {
-            wrapper.style.setProperty('border', 'none', 'important');
-            wrapper.style.setProperty('margin', '0', 'important');
-            wrapper.style.setProperty('padding', '0', 'important');
+            setImportantStyle(wrapper, 'border', 'none');
+            setImportantStyle(wrapper, 'margin', '0');
+            setImportantStyle(wrapper, 'padding', '0');
         } else if (wrapper.tagName === 'P') {
-            wrapper.style.setProperty('margin', '0', 'important');
-            wrapper.style.setProperty('padding', '0', 'important');
+            setImportantStyle(wrapper, 'margin', '0');
+            setImportantStyle(wrapper, 'padding', '0');
         }
     }
 
@@ -379,15 +379,15 @@ export class CalloutProcessor {
         const wrapper = this.getDirectWrapper(calloutEl);
         this.neutralizeWrapper(wrapper);
 
-        wrapper.style.flex = `0 0 ${widthCalc}`;
-        wrapper.style.width = widthCalc;
-        wrapper.style.maxWidth = widthCalc;
-        wrapper.style.setProperty('margin', '0', 'important');
+        wrapper.setCssStyles({ 'flex': `0 0 ${widthCalc}` });
+        wrapper.setCssStyles({ 'width': widthCalc });
+        wrapper.setCssStyles({ 'maxWidth': widthCalc });
+        setImportantStyle(wrapper, 'margin', '0');
         
         if (wrapper !== calloutEl) {
             // Ensure the callout itself fills the wrapper
-            calloutEl.style.width = '100%';
-            calloutEl.style.margin = '0';
+            calloutEl.setCssStyles({ 'width': '100%' });
+            calloutEl.setCssStyles({ 'margin': '0' });
         }
 
         calloutEl.setAttribute('data-grid-pos', gridConfig.position.toString());
@@ -403,12 +403,12 @@ export class CalloutProcessor {
         if (!content) return;
         
         const contentEl = content as HTMLElement;
-        contentEl.style.setProperty('display', 'grid', 'important');
-        contentEl.style.setProperty('grid-template-columns', `repeat(${layout.cols}, 1fr)`, 'important');
+        setImportantStyle(contentEl, 'display', 'grid');
+        setImportantStyle(contentEl, 'grid-template-columns', `repeat(${layout.cols}, 1fr)`);
         // Let rows be auto-sized instead of forced 1fr, prevents squishing
-        contentEl.style.setProperty('grid-template-areas', layout.gridAreas, 'important');
-        contentEl.style.setProperty('gap', '10px', 'important');
-        contentEl.style.setProperty('align-items', 'stretch', 'important');
+        setImportantStyle(contentEl, 'grid-template-areas', layout.gridAreas);
+        setImportantStyle(contentEl, 'gap', '10px');
+        setImportantStyle(contentEl, 'align-items', 'stretch');
         
         // Setup observer to apply grid-areas to children as they render
         this.setupCustomLayoutObserver(calloutEl);
@@ -449,20 +449,20 @@ export class CalloutProcessor {
             }
             
             this.neutralizeWrapper(el);
-            el.style.setProperty('grid-area', `area${areaIndex}`, 'important');
-            el.style.setProperty('margin', '0', 'important');
-            el.style.setProperty('height', '100%', 'important'); // Force wrapper to fill grid cell
-            el.style.setProperty('display', 'flex', 'important'); // Magic fix: Make wrapper flex
-            el.style.setProperty('flex-direction', 'column', 'important');
+            setImportantStyle(el, 'grid-area', `area${areaIndex}`);
+            setImportantStyle(el, 'margin', '0');
+            setImportantStyle(el, 'height', '100%'); // Force wrapper to fill grid cell
+            setImportantStyle(el, 'display', 'flex'); // Magic fix: Make wrapper flex
+            setImportantStyle(el, 'flex-direction', 'column');
             
             const innerCallout = el.classList.contains('callout') ? el : el.querySelector('.callout');
             if (innerCallout) {
                 const calloutHtmlEl = innerCallout as HTMLElement;
-                calloutHtmlEl.style.setProperty('width', '100%', 'important');
-                calloutHtmlEl.style.setProperty('margin', '0', 'important');
-                calloutHtmlEl.style.setProperty('flex', '1', 'important'); // Allow callout to grow and fill wrapper
-                calloutHtmlEl.style.setProperty('display', 'flex', 'important');
-                calloutHtmlEl.style.setProperty('flex-direction', 'column', 'important');
+                setImportantStyle(calloutHtmlEl, 'width', '100%');
+                setImportantStyle(calloutHtmlEl, 'margin', '0');
+                setImportantStyle(calloutHtmlEl, 'flex', '1'); // Allow callout to grow and fill wrapper
+                setImportantStyle(calloutHtmlEl, 'display', 'flex');
+                setImportantStyle(calloutHtmlEl, 'flex-direction', 'column');
             }
             
             areaIndex++;
@@ -484,40 +484,40 @@ export class CalloutProcessor {
                 (style.boldBorder ? '4px' : '1px');
 
             const bStyle = style.borderStyle || 'solid';
-            calloutEl.style.setProperty('border', `${width} ${bStyle} ${style.border}`, 'important');
+            setImportantStyle(calloutEl, 'border', `${width} ${bStyle} ${style.border}`);
 
             // Override border-left if it was set by defaults
-            calloutEl.style.borderLeft = `${width} ${bStyle} ${style.border}`;
+            calloutEl.setCssStyles({ 'borderLeft': `${width} ${bStyle} ${style.border}` });
         }
 
         if (style.titleColor) {
             const title = calloutEl.querySelector('.callout-title');
-            if (title) (title as HTMLElement).style.color = style.titleColor;
+            if (title) (title as HTMLElement).setCssStyles({ 'color': style.titleColor });
             const icon = calloutEl.querySelector('.callout-icon');
-            if (icon) (icon as HTMLElement).style.color = style.titleColor;
+            if (icon) (icon as HTMLElement).setCssStyles({ 'color': style.titleColor });
         }
 
         if (style.font && FONT_FAMILIES[style.font]) {
-            calloutEl.style.setProperty('--font-interface', FONT_FAMILIES[style.font]);
-            calloutEl.style.setProperty('font-family', FONT_FAMILIES[style.font], 'important');
+            calloutEl.setCssProps({ '--font-interface': FONT_FAMILIES[style.font] });
+            setImportantStyle(calloutEl, 'font-family', FONT_FAMILIES[style.font]);
         }
 
         if (style.fontSize && FONT_SIZES[style.fontSize]) {
-            calloutEl.style.fontSize = FONT_SIZES[style.fontSize];
+            calloutEl.setCssStyles({ 'fontSize': FONT_SIZES[style.fontSize] });
             const title = calloutEl.querySelector('.callout-title');
-            if (title) (title as HTMLElement).style.fontSize = '1em';
+            if (title) (title as HTMLElement).setCssStyles({ 'fontSize': '1em' });
         }
 
         // Advanced Borders
-        if (style.borderWidth) calloutEl.style.setProperty('--callout-border-width', style.borderWidth);
-        if (style.borderStyle) calloutEl.style.borderStyle = style.borderStyle;
-        if (style.borderRadius) calloutEl.style.borderRadius = style.borderRadius;
+        if (style.borderWidth) calloutEl.setCssProps({ '--callout-border-width': style.borderWidth });
+        if (style.borderStyle) calloutEl.setCssStyles({ 'borderStyle': style.borderStyle });
+        if (style.borderRadius) calloutEl.setCssStyles({ 'borderRadius': style.borderRadius });
 
         // Layout & Effects
         if (style.noIcon) {
             calloutEl.classList.add('no-icon');
             const icon = calloutEl.querySelector('.callout-icon');
-            if (icon) (icon as HTMLElement).style.display = 'none';
+            if (icon) (icon as HTMLElement).setCssStyles({ 'display': 'none' });
         } else if (style.icon) {
             let iconEl = calloutEl.querySelector('.callout-icon');
             if (!iconEl) {
@@ -530,51 +530,51 @@ export class CalloutProcessor {
             if (iconEl) {
                 (iconEl as HTMLElement).empty();
                 setIcon(iconEl as HTMLElement, style.icon);
-                (iconEl as HTMLElement).style.display = '';
+                (iconEl as HTMLElement).setCssStyles({ 'display': '' });
             }
         }
 
         if (style.compact) {
-            calloutEl.style.setProperty('padding', '0.3em', 'important');
+            setImportantStyle(calloutEl, 'padding', '0.3em');
             const title = calloutEl.querySelector('.callout-title');
             if (title) {
-                (title as HTMLElement).style.setProperty('padding', '0.3em 0.6em', 'important');
-                (title as HTMLElement).style.setProperty('min-height', 'auto', 'important');
+                setImportantStyle((title as HTMLElement), 'padding', '0.3em 0.6em');
+                setImportantStyle((title as HTMLElement), 'min-height', 'auto');
             }
             const content = calloutEl.querySelector('.callout-content');
             if (content) {
-                (content as HTMLElement).style.setProperty('padding', '0.3em 0.6em', 'important');
+                setImportantStyle((content as HTMLElement), 'padding', '0.3em 0.6em');
             }
         }
 
         if (style.center) {
-            calloutEl.style.setProperty('text-align', 'center', 'important');
-            calloutEl.style.setProperty('align-items', 'center', 'important');
+            setImportantStyle(calloutEl, 'text-align', 'center');
+            setImportantStyle(calloutEl, 'align-items', 'center');
 
             const title = calloutEl.querySelector('.callout-title');
             if (title) {
-                (title as HTMLElement).style.setProperty('justify-content', 'center', 'important');
-                (title as HTMLElement).style.setProperty('text-align', 'center', 'important');
+                setImportantStyle((title as HTMLElement), 'justify-content', 'center');
+                setImportantStyle((title as HTMLElement), 'text-align', 'center');
             }
 
             const content = calloutEl.querySelector('.callout-content');
             if (content) {
-                (content as HTMLElement).style.setProperty('text-align', 'center', 'important');
-                (content as HTMLElement).style.setProperty('display', 'flex', 'important');
-                (content as HTMLElement).style.setProperty('flex-direction', 'column', 'important');
-                (content as HTMLElement).style.setProperty('align-items', 'center', 'important');
+                setImportantStyle((content as HTMLElement), 'text-align', 'center');
+                setImportantStyle((content as HTMLElement), 'display', 'flex');
+                setImportantStyle((content as HTMLElement), 'flex-direction', 'column');
+                setImportantStyle((content as HTMLElement), 'align-items', 'center');
             }
         } else if (style.titleCenter) {
             const title = calloutEl.querySelector('.callout-title');
             if (title) {
-                (title as HTMLElement).style.setProperty('justify-content', 'center', 'important');
-                (title as HTMLElement).style.setProperty('text-align', 'center', 'important');
+                setImportantStyle((title as HTMLElement), 'justify-content', 'center');
+                setImportantStyle((title as HTMLElement), 'text-align', 'center');
             }
         }
 
         if (style.neon) {
-            calloutEl.style.boxShadow = `0 0 10px ${style.neon}, inset 0 0 5px ${style.neon}20`;
-            calloutEl.style.borderColor = style.neon;
+            calloutEl.setCssStyles({ 'boxShadow': `0 0 10px ${style.neon}, inset 0 0 5px ${style.neon}20` });
+            calloutEl.setCssStyles({ 'borderColor': style.neon });
         }
     }
 
@@ -582,7 +582,7 @@ export class CalloutProcessor {
      * Applies background color
      */
     applyColor(callout: HTMLElement, color: string): void {
-        callout.style.backgroundColor = `color-mix(in srgb, ${color} 15%, transparent)`;
+        callout.setCssStyles({ 'backgroundColor': `color-mix(in srgb, ${color} 15%, transparent)` });
     }
 
     /**
@@ -590,7 +590,7 @@ export class CalloutProcessor {
      */
     applyTextColor(callout: HTMLElement, color: string): void {
         const content = callout.querySelector('.callout-content');
-        if (content) (content as HTMLElement).style.color = color;
+        if (content) (content as HTMLElement).setCssStyles({ 'color': color });
     }
 
     /**
@@ -598,7 +598,7 @@ export class CalloutProcessor {
      */
     applyLinkColor(callout: HTMLElement, color: string): void {
         callout.setAttribute('data-link-color', color);
-        callout.style.setProperty('--link-color', color);
+        callout.setCssProps({ '--link-color': color });
     }
 
     /**
@@ -635,16 +635,16 @@ export class CalloutProcessor {
                 const rowCount = Math.ceil(itemCount / colCount);
 
                 // Apply grid layout
-                listEl.style.display = 'grid';
-                listEl.style.gridTemplateColumns = `repeat(${colCount}, 1fr)`;
-                listEl.style.gridTemplateRows = `repeat(${rowCount}, auto)`;
-                listEl.style.gap = '0.25em 2em';
-                listEl.style.width = '100%';
+                listEl.setCssStyles({ 'display': 'grid' });
+                listEl.setCssStyles({ 'gridTemplateColumns': `repeat(${colCount}, 1fr)` });
+                listEl.setCssStyles({ 'gridTemplateRows': `repeat(${rowCount}, auto)` });
+                listEl.setCssStyles({ 'gap': '0.25em 2em' });
+                listEl.setCssStyles({ 'width': '100%' });
 
                 // Remove any previous column styles
-                listEl.style.columnCount = '';
-                listEl.style.columnFill = '';
-                listEl.style.height = '';
+                listEl.setCssStyles({ 'columnCount': '' });
+                listEl.setCssStyles({ 'columnFill': '' });
+                listEl.setCssStyles({ 'height': '' });
 
                 // AI_CONTEXT: Manual placement - item i goes to column (i / rowCount) and row (i % rowCount)
                 // This creates top-to-bottom, left-to-right flow
@@ -653,8 +653,8 @@ export class CalloutProcessor {
                     const col = Math.floor(index / rowCount) + 1;
                     const row = (index % rowCount) + 1;
 
-                    liEl.style.gridColumn = col.toString();
-                    liEl.style.gridRow = row.toString();
+                    liEl.setCssStyles({ 'gridColumn': col.toString() });
+                    liEl.setCssStyles({ 'gridRow': row.toString() });
                 });
             });
         });

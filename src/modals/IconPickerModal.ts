@@ -25,9 +25,8 @@ export class IconPickerModal extends FuzzySuggestModal<string> {
     renderSuggestion(match: { item: string }, el: HTMLElement): void {
         const icon = match.item;
         el.addClass('mod-icon-item');
-        el.setCssProps({
-            'display': 'flex',
-            'align-items': 'center',
+        el.setCssStyles({'display': 'flex',
+            'alignItems': 'center',
             'gap': '12px',
             'padding': '8px 12px',
         });
@@ -45,7 +44,7 @@ export class IconPickerModal extends FuzzySuggestModal<string> {
         setIcon(iconContainer, icon);
 
         const textDiv = el.createDiv({ text: icon });
-        textDiv.setCssProps({ 'font-size': '0.9rem' });
+        textDiv.setCssStyles({'fontSize': '0.9rem' });
     }
 
     onChooseItem(icon: string, _evt: MouseEvent | KeyboardEvent): void {
