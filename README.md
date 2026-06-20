@@ -8,41 +8,16 @@ Turn boring generic boxes into magazine-quality layouts, code terminals, or neon
 
 ---
 
-## What's New in v1.0.2
-
-| Feature | Description |
-|---------|-------------|
-| **Center Alignment** | `(center)` to center everything, `(title:center)` for title only |
-| **Compact Mode** | `(compact)` for dashboard-style dense layouts |
-| **Typography System** | Five fonts: `mono`, `serif`, `sans`, `hand`, `marker` |
-| **Font Size Scale** | `font-size:1` (tiny) → `font-size:5` (huge) |
-| **Neon Glow** | Color-based neon borders: `neon:#00f2ff` |
-| **Text Borders** | `text:dark-border` / `light-border` for readability |
-| **Border Styles** | `dashed`, `dotted`, `double` with custom `radius` |
-| **Column Engine Rewrite** | CSS Grid-based reliable multi-column lists |
-| **Dataview Support** | Column layouts work with Dataview task/list queries |
-| **Reading Mode Fixes** | Multi-callouts no longer overlap in preview |
-| **Random Style Generator** | One-click random style in settings |
-
----
-
-## Features at a Glance
+## ✨ Features at a Glance
 
 - **Infinite Customization** — Background, text, borders, icons — all from inline markdown
 - **Advanced Layouts** — Multi-column lists, side-by-side grids, dashboards
+- **Visual Layout Builder** — Drag-and-merge grid designer in settings
 - **Typography Control** — Switch fonts and sizes per callout
 - **Visual Effects** — Gradients, neon glows, custom borders
 - **Center & Compact** — Center-align content or shrink padding for dense views
 - **Dataview Integration** — Column layouts work with Dataview tasks and lists
-- **Visual Settings Panel**:
-    - Live Preview while editing styles
-    - Visual Icon Picker with fuzzy search
-    - Random Style Generator
-    - Import/Export styles as JSON
-    - Standard callout customization (note, info, warning, etc.)
-    - Custom named color palette
-
-> **[Full Usage Guide →](USAGE_GUIDE.md)** — Detailed documentation for every feature.
+- **Icon Metadata** — Set any Lucide icon per callout via `icon:name`
 
 ---
 
@@ -89,6 +64,7 @@ Customize any callout: `> [!type] (param:value, param2:value2) Title`
 | `link` | `link:orange` | Link color inside callout |
 | `gradient` | `gradient:blue-purple` | 2-color linear gradient |
 | `neon` | `neon:#00f2ff` | Neon border + glow effect |
+| `icon` | `icon:sun` | Lucide icon name |
 | `no-icon` | `(no-icon)` | Hide the default icon |
 
 ### Borders
@@ -256,6 +232,19 @@ Add futuristic neon borders and glowing box-shadows.
 
 ---
 
+### Icon Metadata
+Set any Lucide icon for a callout using the `icon:` parameter.
+
+```markdown
+> [!note] (icon:sun, bg:#f1c40f, text:#2c3e50) ☀️ Custom Icon
+> The `icon:` parameter accepts any Lucide icon name.
+
+> [!note] (icon:rocket, bg:#0f0e17, text:#a7a9be, neon:#ff6bcb) 🚀 Rocket Icon
+> Combine with other metadata for maximum effect.
+```
+
+---
+
 ### Standard Columns
 Automatically split list items and checkboxes into multiple columns.
 
@@ -323,7 +312,7 @@ Special Callouts comes with **two distinct layout engines**. Depending on your n
 **How it works:** Instead of writing complex layout math in markdown, you design your grid visually in the Plugin Settings. It works just like Excel or Elementor: **drag to select cells, click "Merge"**, and visually build your layout!
 
 ![Visual Builder Settings](assets/visual_builder_settings.png)
-*(Go to Settings -> Special Callouts -> Visual Layout Builder to try the drag-and-merge interface)*
+*(Go to Settings → Special Callouts → Visual Layout Builder to try the drag-and-merge interface)*
 
 Once you save your layout with a name (e.g., `my_dashboard`), simply call it in your markdown. The system automatically places your callouts into the merged areas you designed.
 
@@ -342,21 +331,6 @@ Once you save your layout with a name (e.g., `my_dashboard`), simply call it in 
 > > text
 >
 > > [!danger] (bg:#c0392b, text:white, center, compact) 📉 Alert
-> > text
->
-> > [!note] (bg:#8e44ad, text:white, center, compact) 📈 Growth
-> > text
->
-> > [!quote] (bg:#f39c12, text:white, center, compact) 📰 News Ticker
-> > text
->
-> > [!todo] (bg:#16a085, text:white, center, compact) 📋 Tasks
-> > text
->
-> > [!tip] (bg:#d35400, text:white, center, compact) 💡 Ideas
-> > text
->
-> > [!bug] (bg:#7f8c8d, text:white, center, compact) 🐛 Bugs
 > > text
 ```
 
@@ -398,15 +372,15 @@ Combine almost every parameter into a single, highly customized callout.
 
 The plugin includes a rich visual settings panel accessible from **Settings → Special Callouts**.
 
-### What you can do:
-
 | Section | Features |
 |---------|----------|
 | **Quick Actions** | "How to Use" modal, "Metadata Reference" modal |
+| **General Settings** | Default callout metadata template |
 | **Custom Callouts** | Create, edit, delete custom style presets with live preview |
 | **Quick Start Presets** | Ocean Deep, Neon Glow, Forest, Sunset — one-click templates |
 | **Random Generator** | Generate a unique random style instantly |
 | **Style Editor** | Name, icon picker, 5 color pickers, neon toggle, font dropdown, border controls, layout toggles |
+| **Visual Layout Builder** | Drag-and-merge grid designer with persist, export, and import |
 | **Import/Export** | Share styles as JSON — copy to clipboard or paste to import |
 | **Standard Callouts** | Modify default colors of built-in types (note, info, warning...) |
 | **Standard Colors** | Edit hex values of named colors (red, blue, green...) |
@@ -420,8 +394,12 @@ Press `Ctrl/Cmd + P` and search for:
 
 | Command | Description |
 |---------|-------------|
-| `Insert Custom Callout` | Browse and insert any saved custom style |
-| `Insert "[style-name]"` | Directly insert a specific custom style |
+| `Insert Custom Style...` | Browse and insert any saved custom style |
+| `Wrap Selection in Callout...` | Wrap selected text in a callout with style picker |
+| `Insert Multi-Column Layout...` | Scaffold a 2/3/4 column multi-callout template |
+| `Change Icon of Callout at Cursor` | Change the Lucide icon of the callout at your cursor |
+| `Advanced Callout Builder...` | Open the full visual builder modal |
+| `Insert "[style-name]" Callout` | Directly insert a specific custom style |
 | `Show Metadata Reference` | Open the full parameter reference |
 
 > Assign **hotkeys** to your favorites in Settings → Hotkeys → Special Callouts.
@@ -431,25 +409,16 @@ Press `Ctrl/Cmd + P` and search for:
 ## Installation
 
 ### From Community Plugins (Recommended)
-1.  Open Obsidian Settings > **Community Plugins**
-2.  Turn off **Restricted Mode**
-3.  Click **Browse** and search for `Special Callouts`
-4.  Click **Install** then **Enable**
+1. Open Obsidian Settings → **Community Plugins**
+2. Turn off **Restricted Mode**
+3. Click **Browse** and search for `Special Callouts`
+4. Click **Install** then **Enable**
 
 ### Manual Installation
-1.  Download `main.js`, `styles.css`, and `manifest.json` from the [latest release](https://github.com/ahseyg/special-callouts/releases)
-2.  Create folder: `VaultFolder/.obsidian/plugins/obsidian-special-callouts/`
-3.  Copy the downloaded files to the folder
-4.  Enable the plugin in Obsidian settings
-
-### Building from Source
-```bash
-git clone https://github.com/ahseyg/obsidian-special-callouts.git
-cd obsidian-special-callouts
-npm install
-npm run build
-```
-Copy `main.js`, `styles.css`, and `manifest.json` to your vault's plugin folder.
+1. Download `main.js`, `styles.css`, and `manifest.json` from the [latest release](https://github.com/ahseyg/special-callouts/releases)
+2. Create folder: `VaultFolder/.obsidian/plugins/special-callouts/`
+3. Copy the downloaded files to the folder
+4. Enable the plugin in Obsidian Settings → Community Plugins
 
 ---
 
@@ -460,22 +429,6 @@ This plugin is **open source** and we welcome contributions!
 - **Bug Reports:** [Open an issue](https://github.com/ahseyg/special-callouts/issues) — please include your Obsidian version, the callout markdown, and a screenshot
 - **Feature Requests:** Same link — we'd love to hear your ideas!
 - **Pull Requests:** Fork, branch, code, PR — all contributions are appreciated
-
-### Project Structure
-```
-├── main.ts              # Plugin entry point
-├── src/
-│   ├── types.ts         # TypeScript interfaces
-│   ├── constants.ts     # Default settings, colors, fonts
-│   ├── parser.ts        # Metadata parser
-│   ├── processor.ts     # Core callout processor
-│   ├── utils.ts         # Utility functions
-│   ├── modals/          # UI modals (How To, Metadata, Icon Picker, Suggester)
-│   └── settings/        # Settings tab UI
-├── styles.css           # Core CSS styles
-├── manifest.json        # Plugin manifest
-└── esbuild.config.mjs   # Build configuration
-```
 
 ---
 

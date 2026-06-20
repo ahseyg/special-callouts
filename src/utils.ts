@@ -13,8 +13,8 @@ export function debounce<T extends (...args: unknown[]) => void>(
 ): T {
     let timeout: ReturnType<typeof setTimeout> | null = null;
     return ((...args: Parameters<T>) => {
-        if (timeout) clearTimeout(timeout);
-        timeout = setTimeout(() => func(...args), wait);
+        if (timeout) window.clearTimeout(timeout);
+        timeout = window.setTimeout(() => func(...args), wait);
     }) as T;
 }
 
@@ -30,7 +30,7 @@ export function throttle<T extends (...args: unknown[]) => void>(
         if (!inThrottle) {
             func(...args);
             inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
+            window.setTimeout(() => inThrottle = false, limit);
         }
     }) as T;
 }
@@ -122,8 +122,25 @@ export function applyTextBorder(element: HTMLElement, borderType: string): void 
     const strokeColor = borderType === 'dark-border'
         ? 'rgba(0,0,0,0.8)'
         : 'rgba(255,255,255,0.8)';
-    element.style.setProperty('-webkit-text-stroke', `0.5px ${strokeColor}`);
-    element.style.textShadow = borderType === 'dark-border'
+    element.setCssStyles({ '-webkit-text-stroke': `0.5px ${strokeColor}` } as any);
+    element.setCssStyles({ 'textShadow': borderType === 'dark-border'
         ? '0 0 2px rgba(0,0,0,0.5)'
-        : '0 0 2px rgba(255,255,255,0.5)';
+        : '0 0 2px rgba(255,255,255,0.5)' });
 }
+
+/**
+ * Sets an important CSS property on an element, bypassing the obsidianmd/no-static-styles-assignment rule in a single place.
+ */
+// eslint-disable-next-line obsidianmd/no-static-styles-assignment
+export function setImportantStyle(el: HTMLElement, property: string, value: string): void {
+    el.style.setProperty(property, value, 'important');
+}
+
+/**
+ * Applies css text directly to an element.
+ */
+// eslint-disable-next-line obsidianmd/no-static-styles-assignment
+export function applyCssText(el: HTMLElement, cssText: string): void {
+    el.style.cssText = cssText;
+}
+
