@@ -5,7 +5,6 @@
 
 import { App, SuggestModal } from 'obsidian';
 import { CalloutStyle } from '../types';
-import SpecialCallouts from '../../main';
 
 /**
  * Modal for selecting and inserting custom callout styles
@@ -28,20 +27,32 @@ export class CustomCalloutSuggester extends SuggestModal<CalloutStyle> {
     }
 
     renderSuggestion(style: CalloutStyle, el: HTMLElement): void {
-        el.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 4px 0;';
+        el.setCssProps({
+            'display': 'flex',
+            'align-items': 'center',
+            'gap': '10px',
+            'padding': '4px 0',
+        });
 
         const swatch = el.createDiv();
-        swatch.style.cssText = `
-            width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
-            background: ${style.bg || 'var(--interactive-accent)'};
-            border: 2px solid ${style.border || style.bg || 'var(--background-modifier-border)'};
-        `;
+        swatch.setCssProps({
+            'width': '28px',
+            'height': '28px',
+            'border-radius': '6px',
+            'flex-shrink': '0',
+            'background': style.bg || 'var(--interactive-accent)',
+            'border': `2px solid ${style.border || style.bg || 'var(--background-modifier-border)'}`,
+        });
 
         const info = el.createDiv();
-        info.style.cssText = 'flex: 1; min-width: 0;';
+        info.setCssProps({ 'flex': '1', 'min-width': '0' });
 
         const nameEl = info.createDiv({ text: style.name });
-        nameEl.style.cssText = 'font-weight: 600; font-size: 0.95rem; color: var(--text-normal);';
+        nameEl.setCssProps({
+            'font-weight': '600',
+            'font-size': '0.95rem',
+            'color': 'var(--text-normal)',
+        });
 
         const metaEl = info.createDiv();
         const parts: string[] = [];
@@ -50,7 +61,13 @@ export class CustomCalloutSuggester extends SuggestModal<CalloutStyle> {
         if (style.compact) parts.push('compact');
         if (style.noIcon) parts.push('no-icon');
         metaEl.textContent = parts.length > 0 ? parts.join(' · ') : 'Custom Style';
-        metaEl.style.cssText = 'font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+        metaEl.setCssProps({
+            'font-size': '0.75rem',
+            'color': 'var(--text-muted)',
+            'white-space': 'nowrap',
+            'overflow': 'hidden',
+            'text-overflow': 'ellipsis',
+        });
     }
 
     onChooseSuggestion(style: CalloutStyle): void {

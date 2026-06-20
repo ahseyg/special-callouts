@@ -7,7 +7,7 @@ import { App, PluginSettingTab, Setting, setIcon, Notice, Modal, TextAreaCompone
 import { CalloutStyle, SpecialCalloutsSettings } from '../types';
 import { DEFAULT_STANDARD_STYLES, QUICK_START_PRESETS, FONT_FAMILIES, FONT_SIZES } from '../constants';
 import { isValidHex, normalizeHex } from '../utils';
-import { parseMetadata, extractMetadata } from '../parser';
+import { parseMetadata } from '../parser';
 import { showHowToUse } from '../modals/HowToModal';
 import { showMetadataReference } from '../modals/MetadataModal';
 import { IconPickerModal } from '../modals/IconPickerModal';
@@ -112,7 +112,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         howToBtn.onmouseout = () => howToBtn.style.background = 'var(--interactive-normal)';
         setIcon(howToBtn.createSpan(), 'help-circle');
         howToBtn.createSpan({ text: 'How to Use' });
-        howToBtn.onclick = () => showHowToUse();
+        howToBtn.onclick = () => showHowToUse(this.app);
 
         const metadataBtn = quickRefDiv.createEl('button');
         metadataBtn.style.cssText = 'padding: 8px 16px; background: var(--interactive-normal); color: var(--text-normal); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: background 0.15s;';
@@ -120,7 +120,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         metadataBtn.onmouseout = () => metadataBtn.style.background = 'var(--interactive-normal)';
         setIcon(metadataBtn.createSpan(), 'list');
         metadataBtn.createSpan({ text: 'Metadata Reference' });
-        metadataBtn.onclick = () => showMetadataReference();
+        metadataBtn.onclick = () => showMetadataReference(this.app);
     }
 
     private createGeneralSettings(container: HTMLElement): void {
@@ -742,115 +742,107 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         const style = this.plugin.settings.standardStyles[styleName];
         if (!style) return;
 
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--background-primary);
-            border: 1px solid var(--background-modifier-border);
-            border-radius: 12px;
-            padding: 2rem;
-            max-width: 450px;
-            width: 90%;
-            z-index: 10000;
-            box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5);
-        `;
+        const editorModal = new Modal(this.app);
+        editorModal.titleEl.setText(`Edit "${styleName}" Style`);
 
-        modal.createEl('h3', { text: `Edit "${styleName}" Style` }).style.cssText = 'margin: 0 0 1.5rem 0;';
+        const { contentEl } = editorModal;
 
         // Preview
-        const previewDiv = modal.createDiv();
-        previewDiv.style.cssText = `
-            background: color-mix(in srgb, ${style.bg} 15%, transparent);
-            border-left: 4px solid ${style.bg};
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 1.5rem;
-        `;
-        previewDiv.innerHTML = `<strong style="color: ${style.titleColor || style.bg}">${style.name}</strong><br><span style="color: ${style.text || 'var(--text-normal)'}">Preview text content</span>`;
+        const previewDiv = contentEl.createDiv();
+        previewDiv.style.setProperty('background', `color-mix(in srgb, ${style.bg} 15%, transparent)`);
+        previewDiv.style.setProperty('border-left', `4px solid ${style.bg}`);
+        previewDiv.style.setProperty('border-radius', '6px');
+        previewDiv.style.setProperty('padding', '12px');
+        previewDiv.style.setProperty('margin-bottom', '1.5rem');
+
+        const previewTitle = previewDiv.createEl('strong', { text: style.name });
+        previewTitle.style.setProperty('color', style.titleColor || style.bg);
+        previewDiv.createEl('br');
+        const previewText = previewDiv.createEl('span', { text: 'Preview text content' });
+        previewText.style.setProperty('color', style.text || 'var(--text-normal)');
 
         const updatePreview = () => {
-            previewDiv.style.background = `color-mix(in srgb, ${style.bg} 15%, transparent)`;
-            previewDiv.style.borderLeftColor = style.bg;
-            previewDiv.innerHTML = `<strong style="color: ${style.titleColor || style.bg}">${style.name}</strong><br><span style="color: ${style.text || 'var(--text-normal)'}">Preview text content</span>`;
+            previewDiv.style.setProperty('background', `color-mix(in srgb, ${style.bg} 15%, transparent)`);
+            previewDiv.style.setProperty('border-left', `4px solid ${style.bg}`);
+            previewTitle.style.setProperty('color', style.titleColor || style.bg);
+            previewText.style.setProperty('color', style.text || 'var(--text-normal)');
         };
 
         // Background color
-        const bgRow = modal.createDiv();
-        bgRow.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 12px;';
-        bgRow.createEl('label', { text: 'Background:' }).style.cssText = 'width: 100px; font-size: 0.9rem;';
+        const bgRow = contentEl.createDiv();
+        bgRow.style.setProperty('display', 'flex');
+        bgRow.style.setProperty('align-items', 'center');
+        bgRow.style.setProperty('gap', '10px');
+        bgRow.style.setProperty('margin-bottom', '12px');
+        bgRow.createEl('label', { text: 'Background:' }).style.setProperty('width', '100px');
         const bgInput = bgRow.createEl('input', { type: 'color', value: style.bg });
-        bgInput.style.cssText = 'width: 40px; height: 30px; border: none; cursor: pointer;';
-        bgInput.oninput = () => {
-            style.bg = bgInput.value;
-            style.border = bgInput.value;
-            updatePreview();
-        };
+        bgInput.oninput = () => { style.bg = bgInput.value; style.border = bgInput.value; updatePreview(); };
 
         // Title color
-        const titleRow = modal.createDiv();
-        titleRow.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 12px;';
-        titleRow.createEl('label', { text: 'Title Color:' }).style.cssText = 'width: 100px; font-size: 0.9rem;';
+        const titleRow = contentEl.createDiv();
+        titleRow.style.setProperty('display', 'flex');
+        titleRow.style.setProperty('align-items', 'center');
+        titleRow.style.setProperty('gap', '10px');
+        titleRow.style.setProperty('margin-bottom', '12px');
+        titleRow.createEl('label', { text: 'Title Color:' }).style.setProperty('width', '100px');
         const titleInput = titleRow.createEl('input', { type: 'color', value: style.titleColor || style.bg });
-        titleInput.style.cssText = 'width: 40px; height: 30px; border: none; cursor: pointer;';
-        titleInput.oninput = () => {
-            style.titleColor = titleInput.value;
-            updatePreview();
-        };
+        titleInput.oninput = () => { style.titleColor = titleInput.value; updatePreview(); };
 
         // Text color
-        const textRow = modal.createDiv();
-        textRow.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;';
-        textRow.createEl('label', { text: 'Text Color:' }).style.cssText = 'width: 100px; font-size: 0.9rem;';
+        const textRow = contentEl.createDiv();
+        textRow.style.setProperty('display', 'flex');
+        textRow.style.setProperty('align-items', 'center');
+        textRow.style.setProperty('gap', '10px');
+        textRow.style.setProperty('margin-bottom', '1.5rem');
+        textRow.createEl('label', { text: 'Text Color:' }).style.setProperty('width', '100px');
         const textInput = textRow.createEl('input', { type: 'color', value: style.text || '#ffffff' });
-        textInput.style.cssText = 'width: 40px; height: 30px; border: none; cursor: pointer;';
-        textInput.oninput = () => {
-            style.text = textInput.value;
-            updatePreview();
-        };
+        textInput.oninput = () => { style.text = textInput.value; updatePreview(); };
 
         // Buttons
-        const buttons = modal.createDiv();
-        buttons.style.cssText = 'display: flex; gap: 10px;';
+        const buttons = contentEl.createDiv();
+        buttons.style.setProperty('display', 'flex');
+        buttons.style.setProperty('gap', '10px');
 
         const saveBtn = buttons.createEl('button', { text: 'Save' });
-        saveBtn.style.cssText = 'flex: 1; padding: 10px; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;';
-        saveBtn.onclick = async () => {
-            this.plugin.settings.standardStyles[styleName] = style;
-            await this.plugin.saveSettings();
-            modal.remove();
-            overlay.remove();
-            this.display();
+        saveBtn.style.setProperty('flex', '1');
+        saveBtn.style.setProperty('padding', '10px');
+        saveBtn.style.setProperty('background', 'var(--interactive-accent)');
+        saveBtn.style.setProperty('color', 'var(--text-on-accent)');
+        saveBtn.style.setProperty('border', 'none');
+        saveBtn.style.setProperty('border-radius', '6px');
+        saveBtn.style.setProperty('cursor', 'pointer');
+        saveBtn.onclick = () => {
+            void (async () => {
+                this.plugin.settings.standardStyles[styleName] = style;
+                await this.plugin.saveSettings();
+                editorModal.close();
+                this.display();
+            })();
         };
 
         const resetBtn = buttons.createEl('button', { text: 'Reset' });
-        resetBtn.style.cssText = 'padding: 10px 20px; background: var(--background-modifier-error); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;';
-        resetBtn.onclick = async () => {
-            this.plugin.settings.standardStyles[styleName] = { ...DEFAULT_STANDARD_STYLES[styleName] };
-            await this.plugin.saveSettings();
-            modal.remove();
-            overlay.remove();
-            this.display();
+        resetBtn.style.setProperty('padding', '10px 20px');
+        resetBtn.style.setProperty('background', 'var(--background-modifier-error)');
+        resetBtn.style.setProperty('color', 'var(--text-on-accent)');
+        resetBtn.style.setProperty('border', 'none');
+        resetBtn.style.setProperty('border-radius', '6px');
+        resetBtn.style.setProperty('cursor', 'pointer');
+        resetBtn.onclick = () => {
+            void (async () => {
+                this.plugin.settings.standardStyles[styleName] = { ...DEFAULT_STANDARD_STYLES[styleName] };
+                await this.plugin.saveSettings();
+                editorModal.close();
+                this.display();
+            })();
         };
 
         const cancelBtn = buttons.createEl('button', { text: 'Cancel' });
-        cancelBtn.style.cssText = 'padding: 10px 20px; background: var(--background-secondary); color: var(--text-normal); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer;';
-        cancelBtn.onclick = () => {
-            modal.remove();
-            overlay.remove();
-        };
+        cancelBtn.style.setProperty('padding', '10px 20px');
+        cancelBtn.style.setProperty('border-radius', '6px');
+        cancelBtn.style.setProperty('cursor', 'pointer');
+        cancelBtn.onclick = () => editorModal.close();
 
-        const overlay = document.createElement('div');
-        overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 9999;';
-        overlay.onclick = () => {
-            modal.remove();
-            overlay.remove();
-        };
-
-        document.body.appendChild(overlay);
-        document.body.appendChild(modal);
+        editorModal.open();
     }
 
     createCustomStylesSection(container: HTMLElement): void {
@@ -1483,7 +1475,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 new Notice('Style JSON copied to clipboard!');
                 exportBtn.style.backgroundColor = 'var(--interactive-success)';
                 exportBtn.style.color = 'white';
-                setTimeout(() => {
+                window.setTimeout(() => {
                     exportBtn.style.background = 'var(--background-primary)';
                     exportBtn.style.color = 'var(--text-muted)';
                 }, 1000);
@@ -1588,7 +1580,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                     error.style.cssText = 'padding: 10px; background: var(--background-modifier-error); color: var(--text-on-accent); border-radius: 6px; margin-top: 10px; font-size: 0.9rem;';
                     error.textContent = `A style named "${this.tempName}" already exists. Please use a different name.`;
 
-                    setTimeout(() => error.remove(), 3000);
+                    window.setTimeout(() => error.remove(), 3000);
                     return;
                 }
 

@@ -615,7 +615,7 @@ export class CalloutProcessor {
      * Example: 7 items, 2 cols -> 4 rows -> Col1: 1,2,3,4  Col2: 5,6,7
      */
     applyColumnsToContainer(container: HTMLElement, colCount: number): void {
-        requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
             const contentEl = container.querySelector('.callout-content');
             if (!contentEl) return;
 
@@ -675,7 +675,7 @@ export class CalloutProcessor {
         const retryDelays = [100, 300, 600, 1000, 2000];
 
         retryDelays.forEach(delay => {
-            setTimeout(() => {
+            window.setTimeout(() => {
                 const contentEl = calloutEl.querySelector('.callout-content');
                 if (!contentEl) return;
 

@@ -149,7 +149,7 @@ export default class SpecialCallouts extends Plugin {
             id: 'show-metadata-reference',
             name: 'Show Metadata Reference',
             callback: () => {
-                showMetadataReference();
+                showMetadataReference(this.app);
             }
         });
 

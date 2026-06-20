@@ -1,80 +1,114 @@
 /**
  * Special Callouts - How To Use Modal
- * Shows usage instructions
+ * Shows usage instructions using Obsidian's safe Modal API
  */
+
+import { App, Modal } from 'obsidian';
 
 /**
  * Creates and displays the how to use modal
  */
-export function showHowToUse(): void {
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 12px; padding: 2rem; max-width: 650px; max-height: 80vh; overflow-y: auto; z-index: 10000; box-shadow: 0 8px 32px rgba(0,0,0,0.3);';
+export function showHowToUse(app: App): void {
+    new HowToModal(app).open();
+}
 
-    const title = modal.createEl('h2', { text: 'How to Use Custom Styles' });
-    title.style.cssText = 'margin: 0 0 1.5rem 0; font-size: 1.4rem;';
+class HowToModal extends Modal {
+    constructor(app: App) {
+        super(app);
+        this.titleEl.setText('How to Use Custom Styles');
+    }
 
-    const content = modal.createDiv();
-    content.innerHTML = `
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">⌨️ Quick Insert via Command Palette</h3>
-            <p style="margin: 0 0 0.5rem 0;">Press <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px;">Ctrl/Cmd+P</code> and type:</p>
-            <ul style="margin: 0; padding-left: 1.5rem;">
-                <li style="margin-bottom: 0.5rem;"><strong>"Insert Custom Callout"</strong> - Browse all your saved styles</li>
-                <li><strong>"Insert [style-name]"</strong> - Directly insert a specific style</li>
-            </ul>
-        </div>
+    onOpen(): void {
+        const { contentEl } = this;
+        contentEl.empty();
 
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">📝 Manual Usage Methods</h3>
-            
-            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background-secondary); border-radius: 6px;">
-                <strong>Method 1: Direct callout type</strong><br>
-                <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px;">> [!your-style-name]</code>
-            </div>
-            
-            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background-secondary); border-radius: 6px;">
-                <strong>Method 2: With metadata</strong><br>
-                <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px;">> [!note] (style:your-style-name)</code>
-            </div>
-        </div>
+        // Section: Command Palette
+        this.createSection(contentEl, '⌨️ Quick Insert via Command Palette', (section) => {
+            section.createEl('p', {
+                text: 'Press Ctrl/Cmd+P and type:',
+            });
+            const ul = section.createEl('ul');
+            ul.createEl('li').createEl('strong', { text: '"Insert Custom Callout"' }).parentElement!
+                .appendText(' - Browse all your saved styles');
+            ul.createEl('li').createEl('strong', { text: '"Insert [style-name]"' }).parentElement!
+                .appendText(' - Directly insert a specific style');
+        });
 
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">📐 Layout Systems</h3>
-            <p style="margin: 0 0 0.5rem 0; font-size: 0.9em;"><strong>1. Inline Grid (Simple):</strong> Quick alignments using <code style="background: var(--background-modifier-border); padding: 2px 4px; border-radius: 3px;">(position:cols)</code></p>
-            <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px; display: block; margin-bottom: 1rem;">> [!multi-callout]<br>> > [!info] (1:2)<br>> > [!tip] (2:2)</code>
-            
-            <p style="margin: 0 0 0.5rem 0; font-size: 0.9em;"><strong>2. Visual Layout Builder (Advanced):</strong> Create Excel-like merged grids in settings, then use their name!</p>
-            <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px; display: block;">> [!multi-callout] (my_dashboard)<br>> > [!info]<br>> > [!tip]</code>
-        </div>
+        // Section: Manual Usage
+        this.createSection(contentEl, '📝 Manual Usage Methods', (section) => {
+            this.createMethodBox(section, 'Method 1: Direct callout type', '> [!your-style-name]');
+            this.createMethodBox(section, 'Method 2: With metadata', '> [!note] (style:your-style-name)');
+        });
 
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">💡 Pro Tips</h3>
-            <ul style="margin: 0; padding-left: 1.5rem;">
-                <li style="margin-bottom: 0.5rem;">Use <code style="background: var(--background-modifier-border); padding: 2px 4px; border-radius: 3px;">(title:red)</code> to override title color</li>
-                <li style="margin-bottom: 0.5rem;">Try <code style="background: var(--background-modifier-border); padding: 2px 4px; border-radius: 3px;">(no-icon)</code> for a minimalist look</li>
-                <li>Click "Metadata Reference" to see all available parameters</li>
-            </ul>
-        </div>
+        // Section: Layout Systems
+        this.createSection(contentEl, '📐 Layout Systems', (section) => {
+            const p1 = section.createEl('p');
+            p1.createEl('strong', { text: '1. Inline Grid (Simple):' });
+            p1.appendText(' Quick alignments using ');
+            p1.createEl('code', { text: '(position:cols)' });
 
-        <div style="background: linear-gradient(135deg, #667eea 15%, #764ba2 85%); padding: 1rem; border-radius: 6px; color: var(--text-on-accent);">
-            <strong>⚡ Quick Tip:</strong> Assign hotkeys to your favorite styles in Settings → Hotkeys → Special Callouts
-        </div>
-    `;
+            const code1 = section.createEl('code');
+            code1.style.setProperty('display', 'block');
+            code1.style.setProperty('margin-bottom', '1rem');
+            code1.setText('> [!multi-callout]\n> > [!info] (1:2)\n> > [!tip] (2:2)');
 
-    const closeBtn = modal.createEl('button', { text: 'Got it!' });
-    closeBtn.style.cssText = 'margin-top: 1.5rem; padding: 0.6rem 1.5rem; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 500; width: 100%;';
-    closeBtn.onclick = () => {
-        modal.remove();
-        overlay.remove();
-    };
+            const p2 = section.createEl('p');
+            p2.createEl('strong', { text: '2. Visual Layout Builder (Advanced):' });
+            p2.appendText(' Create Excel-like merged grids in settings, then use their name!');
 
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 9999;';
-    overlay.onclick = () => {
-        modal.remove();
-        overlay.remove();
-    };
+            section.createEl('code', { text: '> [!multi-callout] (my_dashboard)\n> > [!info]\n> > [!tip]' });
+        });
 
-    document.body.appendChild(overlay);
-    document.body.appendChild(modal);
+        // Section: Pro Tips
+        this.createSection(contentEl, '💡 Pro Tips', (section) => {
+            const ul = section.createEl('ul');
+            const tip1 = ul.createEl('li');
+            tip1.appendText('Use ');
+            tip1.createEl('code', { text: '(title:red)' });
+            tip1.appendText(' to override title color');
+
+            const tip2 = ul.createEl('li');
+            tip2.appendText('Try ');
+            tip2.createEl('code', { text: '(no-icon)' });
+            tip2.appendText(' for a minimalist look');
+
+            ul.createEl('li', { text: 'Click "Metadata Reference" to see all available parameters' });
+        });
+
+        // Tip banner
+        const banner = contentEl.createDiv();
+        banner.setCssProps({
+            '--banner-bg': 'linear-gradient(135deg, #667eea 15%, #764ba2 85%)',
+        });
+        banner.style.setProperty('background', 'linear-gradient(135deg, #667eea 15%, #764ba2 85%)');
+        banner.style.setProperty('padding', '1rem');
+        banner.style.setProperty('border-radius', '6px');
+        banner.style.setProperty('color', 'var(--text-on-accent)');
+        banner.createEl('strong', { text: '⚡ Quick Tip: ' });
+        banner.appendText('Assign hotkeys to your favorite styles in Settings → Hotkeys → Special Callouts');
+    }
+
+    onClose(): void {
+        this.contentEl.empty();
+    }
+
+    private createSection(container: HTMLElement, title: string, fill: (el: HTMLElement) => void): void {
+        const section = container.createDiv();
+        section.style.setProperty('margin-bottom', '1.5rem');
+        const h3 = section.createEl('h3', { text: title });
+        h3.style.setProperty('margin', '0 0 0.75rem 0');
+        h3.style.setProperty('color', 'var(--interactive-accent)');
+        fill(section);
+    }
+
+    private createMethodBox(container: HTMLElement, label: string, code: string): void {
+        const box = container.createDiv();
+        box.style.setProperty('margin-bottom', '1rem');
+        box.style.setProperty('padding', '1rem');
+        box.style.setProperty('background', 'var(--background-secondary)');
+        box.style.setProperty('border-radius', '6px');
+        box.createEl('strong', { text: label });
+        box.createEl('br');
+        box.createEl('code', { text: code });
+    }
 }

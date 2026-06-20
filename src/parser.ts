@@ -17,7 +17,7 @@ import { resolveColor, smartSplit } from './utils';
  * @returns Parsed configuration object
  */
 // Module-level constants for performance
-const LAYOUT_REGEX = /(?:^|[\s,])(\d+(?:[:,\/]\d+){1,2})(?:$|[\s,])/;
+const LAYOUT_REGEX = /(?:^|[\s,])(\d+(?:[:,/]\d+){1,2})(?:$|[\s,])/;
 const GROUP_REGEX = /^\(([^)]+)\)$/;
 
 export function parseMetadata(
@@ -109,10 +109,11 @@ export function parseMetadata(
         // to simplify inline usage and encourage the Visual Layout Builder.
         switch (key) {
             case 'col':
-            case 'column':
+            case 'column': {
                 const col = parseInt(rawValue);
                 if (!isNaN(col)) config.col = col;
                 break;
+            }
             case 'bg':
             case 'background':
                 config.bg = resolve(rawValue);
@@ -161,12 +162,13 @@ export function parseMetadata(
             case 'font':
                 config.font = rawValue.toLowerCase();
                 break;
-            case 'font-size':
+            case 'font-size': {
                 const size = parseInt(rawValue);
                 if (!isNaN(size) && size >= 1 && size <= 5) {
                     config.fontSize = size;
                 }
                 break;
+            }
             case 'compact':
             case 'dense':
                 config.compact = true;
@@ -196,7 +198,7 @@ export function parseMetadata(
  * @returns Grid configuration or null
  */
 export function parseGridLayout(param: string): GridConfig | null {
-    const match = param.match(/^(\d+)[:,\/](\d+)(?:[:,\/](\d+))?$/);
+    const match = param.match(/^(\d+)[:,/](\d+)(?:[:,/](\d+))?$/);
     if (!match) return null;
 
     return {

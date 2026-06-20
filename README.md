@@ -1,46 +1,14 @@
 # Special Callouts for Obsidian
 
-> **⚠️ Beta Release** — This is a pre-release version (`1.0.3-beta.1`). It includes new features that are still being tested. Please report any issues on [GitHub Issues](https://github.com/ahseyg/special-callouts/issues).
-
 **Transform your Obsidian notes with premium, dynamic, and fully customizable callouts.**
 
 Turn boring generic boxes into magazine-quality layouts, code terminals, or neon-glowing alerts. Customize everything directly from your markdown — or create reusable presets in the visual settings panel.
 
 **Open source** · MIT License · Contributions welcome!
 
-![Demo](assets/demo-banner.png)
-
 ---
 
-## What's New in v1.0.3-beta.1
-
-### Visual Layout Builder
-| Feature | Description |
-|---------|-------------|
-| **Layout Persistence** | Builder state survives settings tab refreshes — no more lost work |
-| **Export All / Import** | Backup all custom layouts as JSON, or transfer them between vaults |
-| **Drag-and-Merge Grid** | Excel-like cell selection: drag to select, click "Merge" to combine |
-
-### Styling & Commands
-| Feature | Description |
-|---------|-------------|
-| **Icon Metadata** | `icon:lucide-name` — set any Lucide icon directly from markdown |
-| **Default Callout Metadata** | Set a default metadata template in General Settings |
-| **Wrap Selection in Callout** | Select text → Command Palette → wrap it in a styled callout |
-| **Change Icon at Cursor** | Place cursor on a callout header → change its icon via picker |
-| **Advanced Callout Builder** | Full visual builder modal from Command Palette |
-
-### Stability & Compatibility
-| Fix | Description |
-|-----|-------------|
-| **Live Preview / MCL Support** | Extended CSS selectors for column layouts in editor mode |
-| **Theme Contrast Fix** | All UI buttons use `var(--text-on-accent)` — works with any accent color |
-| **Icon Injection** | Resilient icon rendering handles theme-specific omissions |
-| **Column Stability** | Optimized `MutationObserver` targets only list-related DOM changes |
-
----
-
-## Features at a Glance
+## ✨ Features at a Glance
 
 - **Infinite Customization** — Background, text, borders, icons — all from inline markdown
 - **Advanced Layouts** — Multi-column lists, side-by-side grids, dashboards
@@ -50,15 +18,6 @@ Turn boring generic boxes into magazine-quality layouts, code terminals, or neon
 - **Center & Compact** — Center-align content or shrink padding for dense views
 - **Dataview Integration** — Column layouts work with Dataview tasks and lists
 - **Icon Metadata** — Set any Lucide icon per callout via `icon:name`
-- **Visual Settings Panel**:
-    - Live Preview while editing styles
-    - Visual Icon Picker with fuzzy search
-    - Random Style Generator
-    - Import/Export styles & layouts as JSON
-    - Standard callout customization (note, info, warning, etc.)
-    - Custom named color palette
-
-> **[Full Usage Guide →](USAGE_GUIDE.md)** — Detailed documentation for every feature.
 
 ---
 
@@ -353,11 +312,9 @@ Special Callouts comes with **two distinct layout engines**. Depending on your n
 **How it works:** Instead of writing complex layout math in markdown, you design your grid visually in the Plugin Settings. It works just like Excel or Elementor: **drag to select cells, click "Merge"**, and visually build your layout!
 
 ![Visual Builder Settings](assets/visual_builder_settings.png)
-*(Go to Settings -> Special Callouts -> Visual Layout Builder to try the drag-and-merge interface)*
+*(Go to Settings → Special Callouts → Visual Layout Builder to try the drag-and-merge interface)*
 
 Once you save your layout with a name (e.g., `my_dashboard`), simply call it in your markdown. The system automatically places your callouts into the merged areas you designed.
-
-**New in v1.0.3-beta.1:** Layouts now persist across settings tab refreshes, and you can export/import all layouts as JSON for backup or vault transfer.
 
 ![Ultimate Dashboard Grid](assets/ultimate_dashboard.png)
 
@@ -374,21 +331,6 @@ Once you save your layout with a name (e.g., `my_dashboard`), simply call it in 
 > > text
 >
 > > [!danger] (bg:#c0392b, text:white, center, compact) 📉 Alert
-> > text
->
-> > [!note] (bg:#8e44ad, text:white, center, compact) 📈 Growth
-> > text
->
-> > [!quote] (bg:#f39c12, text:white, center, compact) 📰 News Ticker
-> > text
->
-> > [!todo] (bg:#16a085, text:white, center, compact) 📋 Tasks
-> > text
->
-> > [!tip] (bg:#d35400, text:white, center, compact) 💡 Ideas
-> > text
->
-> > [!bug] (bg:#7f8c8d, text:white, center, compact) 🐛 Bugs
 > > text
 ```
 
@@ -430,8 +372,6 @@ Combine almost every parameter into a single, highly customized callout.
 
 The plugin includes a rich visual settings panel accessible from **Settings → Special Callouts**.
 
-### What you can do:
-
 | Section | Features |
 |---------|----------|
 | **Quick Actions** | "How to Use" modal, "Metadata Reference" modal |
@@ -445,8 +385,6 @@ The plugin includes a rich visual settings panel accessible from **Settings → 
 | **Standard Callouts** | Modify default colors of built-in types (note, info, warning...) |
 | **Standard Colors** | Edit hex values of named colors (red, blue, green...) |
 | **Custom Colors** | Add your own named colors for use in any callout |
-
-![Settings](assets/example-settings.png)
 
 ---
 
@@ -471,25 +409,16 @@ Press `Ctrl/Cmd + P` and search for:
 ## Installation
 
 ### From Community Plugins (Recommended)
-1.  Open Obsidian Settings > **Community Plugins**
-2.  Turn off **Restricted Mode**
-3.  Click **Browse** and search for `Special Callouts`
-4.  Click **Install** then **Enable**
+1. Open Obsidian Settings → **Community Plugins**
+2. Turn off **Restricted Mode**
+3. Click **Browse** and search for `Special Callouts`
+4. Click **Install** then **Enable**
 
-### Manual Installation (Beta)
-1.  Download `main.js`, `styles.css`, and `manifest.json` from the [latest pre-release](https://github.com/ahseyg/special-callouts/releases)
-2.  Create folder: `VaultFolder/.obsidian/plugins/special-callouts/`
-3.  Copy the downloaded files to the folder
-4.  Enable the plugin in Obsidian settings
-
-### Building from Source
-```bash
-git clone https://github.com/ahseyg/special-callouts.git
-cd special-callouts
-npm install
-npm run build
-```
-Copy `main.js`, `styles.css`, and `manifest.json` to your vault's plugin folder.
+### Manual Installation
+1. Download `main.js`, `styles.css`, and `manifest.json` from the [latest release](https://github.com/ahseyg/special-callouts/releases)
+2. Create folder: `VaultFolder/.obsidian/plugins/special-callouts/`
+3. Copy the downloaded files to the folder
+4. Enable the plugin in Obsidian Settings → Community Plugins
 
 ---
 
@@ -500,22 +429,6 @@ This plugin is **open source** and we welcome contributions!
 - **Bug Reports:** [Open an issue](https://github.com/ahseyg/special-callouts/issues) — please include your Obsidian version, the callout markdown, and a screenshot
 - **Feature Requests:** Same link — we'd love to hear your ideas!
 - **Pull Requests:** Fork, branch, code, PR — all contributions are appreciated
-
-### Project Structure
-```
-├── main.ts              # Plugin entry point
-├── src/
-│   ├── types.ts         # TypeScript interfaces
-│   ├── constants.ts     # Default settings, colors, fonts
-│   ├── parser.ts        # Metadata parser
-│   ├── processor.ts     # Core callout processor
-│   ├── utils.ts         # Utility functions
-│   ├── modals/          # UI modals (How To, Metadata, Icon Picker, Suggester, Advanced Builder)
-│   └── settings/        # Settings tab UI (with Visual Layout Builder)
-├── styles.css           # Core CSS styles
-├── manifest.json        # Plugin manifest
-└── esbuild.config.mjs   # Build configuration
-```
 
 ---
 

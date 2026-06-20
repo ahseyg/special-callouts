@@ -27,7 +27,7 @@ __export(main_exports, {
   default: () => SpecialCallouts
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian6 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 
 // src/constants.ts
 var DEFAULT_STANDARD_COLORS = {
@@ -114,8 +114,8 @@ var QUICK_START_PRESETS = [
 function debounce(func, wait) {
   let timeout = null;
   return (...args) => {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
+    if (timeout) window.clearTimeout(timeout);
+    timeout = window.setTimeout(() => func(...args), wait);
   };
 }
 function isValidHex(hex) {
@@ -159,7 +159,7 @@ function applyTextBorder(element, borderType) {
 }
 
 // src/parser.ts
-var LAYOUT_REGEX = /(?:^|[\s,])(\d+(?:[:,\/]\d+){1,2})(?:$|[\s,])/;
+var LAYOUT_REGEX = /(?:^|[\s,])(\d+(?:[:,/]\d+){1,2})(?:$|[\s,])/;
 var GROUP_REGEX = /^\(([^)]+)\)$/;
 function parseMetadata(content, standardColors, customColors, customLayoutNames = []) {
   const config = { ...DEFAULT_CALLOUT_CONFIG };
@@ -222,10 +222,11 @@ function parseMetadata(content, standardColors, customColors, customLayoutNames 
     const isBorderValue = ["dark-border", "light-border"].includes(rawValue.toLowerCase());
     switch (key) {
       case "col":
-      case "column":
+      case "column": {
         const col = parseInt(rawValue);
         if (!isNaN(col)) config.col = col;
         break;
+      }
       case "bg":
       case "background":
         config.bg = resolve(rawValue);
@@ -274,12 +275,13 @@ function parseMetadata(content, standardColors, customColors, customLayoutNames 
       case "font":
         config.font = rawValue.toLowerCase();
         break;
-      case "font-size":
+      case "font-size": {
         const size = parseInt(rawValue);
         if (!isNaN(size) && size >= 1 && size <= 5) {
           config.fontSize = size;
         }
         break;
+      }
       case "compact":
       case "dense":
         config.compact = true;
@@ -302,7 +304,7 @@ function parseMetadata(content, standardColors, customColors, customLayoutNames 
   return { config, layoutParam, styleParam };
 }
 function parseGridLayout(param) {
-  const match = param.match(/^(\d+)[:,\/](\d+)(?:[:,\/](\d+))?$/);
+  const match = param.match(/^(\d+)[:,/](\d+)(?:[:,/](\d+))?$/);
   if (!match) return null;
   return {
     position: parseInt(match[1]),
@@ -797,7 +799,7 @@ var CalloutProcessor = class {
    * Example: 7 items, 2 cols -> 4 rows -> Col1: 1,2,3,4  Col2: 5,6,7
    */
   applyColumnsToContainer(container, colCount) {
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       const contentEl = container.querySelector(".callout-content");
       if (!contentEl) return;
       const lists = contentEl.querySelectorAll("ul, ol, .dataview.list-view-ul, .dataview-result-list-ul, .dataview ul, .block-language-dataview ul, .cm-embed-block ul, .cm-embed-block ol, .markdown-rendered ul, .markdown-rendered ol");
@@ -839,7 +841,7 @@ var CalloutProcessor = class {
   scheduleColumnRetry(calloutEl, colCount) {
     const retryDelays = [100, 300, 600, 1e3, 2e3];
     retryDelays.forEach((delay) => {
-      setTimeout(() => {
+      window.setTimeout(() => {
         const contentEl = calloutEl.querySelector(".callout-content");
         if (!contentEl) return;
         const lists = contentEl.querySelectorAll("ul, ol, .dataview.list-view-ul, .dataview-result-list-ul, .dataview ul, .block-language-dataview ul, .cm-embed-block ul, .cm-embed-block ol, .markdown-rendered ul, .markdown-rendered ol");
@@ -903,17 +905,29 @@ var CustomCalloutSuggester = class extends import_obsidian2.SuggestModal {
     );
   }
   renderSuggestion(style, el) {
-    el.style.cssText = "display: flex; align-items: center; gap: 10px; padding: 4px 0;";
+    el.setCssProps({
+      "display": "flex",
+      "align-items": "center",
+      "gap": "10px",
+      "padding": "4px 0"
+    });
     const swatch = el.createDiv();
-    swatch.style.cssText = `
-            width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
-            background: ${style.bg || "var(--interactive-accent)"};
-            border: 2px solid ${style.border || style.bg || "var(--background-modifier-border)"};
-        `;
+    swatch.setCssProps({
+      "width": "28px",
+      "height": "28px",
+      "border-radius": "6px",
+      "flex-shrink": "0",
+      "background": style.bg || "var(--interactive-accent)",
+      "border": `2px solid ${style.border || style.bg || "var(--background-modifier-border)"}`
+    });
     const info = el.createDiv();
-    info.style.cssText = "flex: 1; min-width: 0;";
+    info.setCssProps({ "flex": "1", "min-width": "0" });
     const nameEl = info.createDiv({ text: style.name });
-    nameEl.style.cssText = "font-weight: 600; font-size: 0.95rem; color: var(--text-normal);";
+    nameEl.setCssProps({
+      "font-weight": "600",
+      "font-size": "0.95rem",
+      "color": "var(--text-normal)"
+    });
     const metaEl = info.createDiv();
     const parts = [];
     if (style.bg) parts.push(`bg: ${style.bg}`);
@@ -921,7 +935,13 @@ var CustomCalloutSuggester = class extends import_obsidian2.SuggestModal {
     if (style.compact) parts.push("compact");
     if (style.noIcon) parts.push("no-icon");
     metaEl.textContent = parts.length > 0 ? parts.join(" \xB7 ") : "Custom Style";
-    metaEl.style.cssText = "font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
+    metaEl.setCssProps({
+      "font-size": "0.75rem",
+      "color": "var(--text-muted)",
+      "white-space": "nowrap",
+      "overflow": "hidden",
+      "text-overflow": "ellipsis"
+    });
   }
   onChooseSuggestion(style) {
     this.onSelect(style);
@@ -929,212 +949,216 @@ var CustomCalloutSuggester = class extends import_obsidian2.SuggestModal {
 };
 
 // src/modals/MetadataModal.ts
-function showMetadataReference() {
-  const modal = document.createElement("div");
-  modal.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: var(--background-primary);
-        border: 1px solid var(--background-modifier-border);
-        border-radius: 16px;
-        padding: 2.5rem;
-        max-width: 700px;
-        width: 90%;
-        max-height: 85vh;
-        overflow-y: auto;
-        z-index: 10000;
-        box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5);
-    `;
-  const title = modal.createEl("h2", { text: "Metadata Reference" });
-  title.style.cssText = "margin: 0 0 2rem 0; font-size: 1.8rem; font-weight: 700; color: var(--text-normal); letter-spacing: -0.02em;";
-  const content = modal.createDiv();
-  content.innerHTML = `
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u{1F3A8} Colors</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>bg:red</code> or <code>bg:#ff0000</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Background color</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>text:white</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Content text color</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>title:cyan</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Title text color</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>link:orange</code></td><td style="padding: 10px 0; color: var(--text-muted);">Link color</td></tr>
-            </table>
-        </div>
-
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">Aa Typography</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>font:mono</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Monospace font</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>font:serif</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Serif font</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>font:hand</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Handwritten style</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>font-size:1</code> to <code>5</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Font size (3 is default)</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>text:dark-border</code></td><td style="padding: 10px 0; color: var(--text-muted);">Dark outline on text</td></tr>
-            </table>
-        </div>
-
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u2728 Text Border (Readability)</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>text:dark-border</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Dark outline on text</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>text:light-border</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Light outline on text</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>text:(white, dark-border)</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Grouped: color + border</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>title:(cyan, dark-border)</code></td><td style="padding: 10px 0; color: var(--text-muted);">Same for title</td></tr>
-            </table>
-        </div>
-
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u{1F3A8} Effects</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>neon:#00f2ff</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Neon border with glow</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>gradient:blue-purple</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">2-color gradient background</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border:red</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Border color</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border:none</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Remove all borders</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border-width:4</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Border thickness (px)</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border-style:dashed</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">dashed, dotted, double, solid</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>radius:20</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Corner roundness (px)</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>no-icon</code></td><td style="padding: 10px 0; color: var(--text-muted);">Hide the callout icon</td></tr>
-            </table>
-        </div>
-
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u{1F4CA} Layout</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>col:3</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Multi-column list (inside callout)</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>compact</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Reduce padding (dense mode)</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>center</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Center title and content</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>title:center</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Center title only</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>1:3</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Grid: position 1 of 3 columns</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>1:3:2</code></td><td style="padding: 10px 0; color: var(--text-muted);">Grid: pos 1, 3 cols, row 2</td></tr>
-            </table>
-        </div>
-
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">\u26A1 Presets</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; width: 45%; color: var(--code-normal);"><code>style:my-style</code></td><td style="padding: 10px 0; color: var(--text-muted);">Apply saved custom style</td></tr>
-            </table>
-        </div>
-
-        <div style="background: var(--background-primary-alt); padding: 1rem; border-radius: 8px; border: 1px solid var(--background-modifier-border); margin-bottom: 1rem;">
-            <strong style="color: var(--text-accent);">\u{1F4A1} Example:</strong><br>
-            <code style="display: block; margin-top: 0.5rem; padding: 0.5rem; background: var(--background-secondary); border-radius: 4px;">(bg:#1a1a2e, text:(white, dark-border), neon:#00f2ff, radius:10)</code>
-        </div>
-
-        <div style="background: var(--background-primary-alt); padding: 1rem; border-radius: 8px; border: 1px solid var(--background-modifier-border);">
-            <strong style="color: var(--text-accent);">Pro Tip:</strong> Use <code>Ctrl/Cmd+P</code> and type "Insert Custom Callout" to quickly access your styles.
-        </div>
-    `;
-  const closeBtn = modal.createEl("button", { text: "Close" });
-  closeBtn.style.cssText = `
-        margin-top: 2rem;
-        padding: 0.8rem 1.5rem;
-        background: var(--interactive-accent);
-        color: var(--text-on-accent);
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        width: 100%;
-        transition: opacity 0.2s ease;
-    `;
-  closeBtn.onmouseover = () => closeBtn.style.opacity = "0.9";
-  closeBtn.onmouseout = () => closeBtn.style.opacity = "1";
-  closeBtn.onclick = () => {
-    modal.remove();
-    overlay.remove();
-  };
-  const overlay = document.createElement("div");
-  overlay.style.cssText = "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 9999;";
-  overlay.onclick = () => {
-    modal.remove();
-    overlay.remove();
-  };
-  document.body.appendChild(overlay);
-  document.body.appendChild(modal);
+var import_obsidian3 = require("obsidian");
+function showMetadataReference(app) {
+  new MetadataReferenceModal(app).open();
 }
+var MetadataReferenceModal = class extends import_obsidian3.Modal {
+  constructor(app) {
+    super(app);
+    this.titleEl.setText("Metadata Reference");
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("sc-metadata-modal");
+    this.createTable(contentEl, "\u{1F3A8} Colors", [
+      ["bg:red or bg:#ff0000", "Background color"],
+      ["text:white", "Content text color"],
+      ["title:cyan", "Title text color"],
+      ["link:orange", "Link color"]
+    ]);
+    this.createTable(contentEl, "Aa Typography", [
+      ["font:mono", "Monospace font"],
+      ["font:serif", "Serif font"],
+      ["font:hand", "Handwritten style"],
+      ["font-size:1 to 5", "Font size (3 is default)"],
+      ["text:dark-border", "Dark outline on text"]
+    ]);
+    this.createTable(contentEl, "\u2728 Text Border (Readability)", [
+      ["text:dark-border", "Dark outline on text"],
+      ["text:light-border", "Light outline on text"],
+      ["text:(white, dark-border)", "Grouped: color + border"],
+      ["title:(cyan, dark-border)", "Same for title"]
+    ]);
+    this.createTable(contentEl, "\u{1F3A8} Effects", [
+      ["neon:#00f2ff", "Neon border with glow"],
+      ["gradient:blue-purple", "2-color gradient background"],
+      ["border:red", "Border color"],
+      ["border:none", "Remove all borders"],
+      ["border-width:4", "Border thickness (px)"],
+      ["border-style:dashed", "dashed, dotted, double, solid"],
+      ["radius:20", "Corner roundness (px)"],
+      ["no-icon", "Hide the callout icon"]
+    ]);
+    this.createTable(contentEl, "\u{1F4CA} Layout", [
+      ["col:3", "Multi-column list (inside callout)"],
+      ["compact", "Reduce padding (dense mode)"],
+      ["center", "Center title and content"],
+      ["title:center", "Center title only"],
+      ["1:3", "Grid: position 1 of 3 columns"],
+      ["1:3:2", "Grid: pos 1, 3 cols, row 2"]
+    ]);
+    this.createTable(contentEl, "\u26A1 Presets", [
+      ["style:my-style", "Apply saved custom style"]
+    ]);
+    const exampleBox = contentEl.createDiv();
+    exampleBox.style.setProperty("background", "var(--background-primary-alt)");
+    exampleBox.style.setProperty("padding", "1rem");
+    exampleBox.style.setProperty("border-radius", "8px");
+    exampleBox.style.setProperty("border", "1px solid var(--background-modifier-border)");
+    exampleBox.style.setProperty("margin-bottom", "1rem");
+    exampleBox.createEl("strong", { text: "\u{1F4A1} Example:" }).style.setProperty("color", "var(--text-accent)");
+    exampleBox.createEl("br");
+    const exCode = exampleBox.createEl("code", {
+      text: "(bg:#1a1a2e, text:(white, dark-border), neon:#00f2ff, radius:10)"
+    });
+    exCode.style.setProperty("display", "block");
+    exCode.style.setProperty("margin-top", "0.5rem");
+    exCode.style.setProperty("padding", "0.5rem");
+    exCode.style.setProperty("background", "var(--background-secondary)");
+    exCode.style.setProperty("border-radius", "4px");
+    const tipBox = contentEl.createDiv();
+    tipBox.style.setProperty("background", "var(--background-primary-alt)");
+    tipBox.style.setProperty("padding", "1rem");
+    tipBox.style.setProperty("border-radius", "8px");
+    tipBox.style.setProperty("border", "1px solid var(--background-modifier-border)");
+    tipBox.createEl("strong", { text: "Pro Tip: " }).style.setProperty("color", "var(--text-accent)");
+    tipBox.appendText("Use ");
+    tipBox.createEl("code", { text: "Ctrl/Cmd+P" });
+    tipBox.appendText(' and type "Insert Custom Callout" to quickly access your styles.');
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  createTable(container, title, rows) {
+    const section = container.createDiv();
+    section.style.setProperty("margin-bottom", "2rem");
+    const h3 = section.createEl("h3", { text: title });
+    h3.style.setProperty("margin", "0 0 1rem 0");
+    h3.style.setProperty("font-weight", "600");
+    h3.style.setProperty("border-bottom", "2px solid var(--interactive-accent)");
+    h3.style.setProperty("padding-bottom", "0.5rem");
+    const table = section.createEl("table");
+    table.style.setProperty("width", "100%");
+    table.style.setProperty("border-collapse", "collapse");
+    table.style.setProperty("font-size", "0.9rem");
+    rows.forEach(([param, desc], i) => {
+      const tr = table.createEl("tr");
+      const isLast = i === rows.length - 1;
+      const td1 = tr.createEl("td");
+      td1.style.setProperty("padding", "10px 0");
+      td1.style.setProperty("width", "45%");
+      td1.style.setProperty("color", "var(--code-normal)");
+      if (!isLast) td1.style.setProperty("border-bottom", "1px solid var(--background-modifier-border)");
+      td1.createEl("code", { text: param });
+      const td2 = tr.createEl("td");
+      td2.style.setProperty("padding", "10px 0");
+      td2.style.setProperty("color", "var(--text-muted)");
+      if (!isLast) td2.style.setProperty("border-bottom", "1px solid var(--background-modifier-border)");
+      td2.setText(desc);
+    });
+  }
+};
 
 // src/settings/SettingsTab.ts
-var import_obsidian4 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 
 // src/modals/HowToModal.ts
-function showHowToUse() {
-  const modal = document.createElement("div");
-  modal.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 12px; padding: 2rem; max-width: 650px; max-height: 80vh; overflow-y: auto; z-index: 10000; box-shadow: 0 8px 32px rgba(0,0,0,0.3);";
-  const title = modal.createEl("h2", { text: "How to Use Custom Styles" });
-  title.style.cssText = "margin: 0 0 1.5rem 0; font-size: 1.4rem;";
-  const content = modal.createDiv();
-  content.innerHTML = `
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">\u2328\uFE0F Quick Insert via Command Palette</h3>
-            <p style="margin: 0 0 0.5rem 0;">Press <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px;">Ctrl/Cmd+P</code> and type:</p>
-            <ul style="margin: 0; padding-left: 1.5rem;">
-                <li style="margin-bottom: 0.5rem;"><strong>"Insert Custom Callout"</strong> - Browse all your saved styles</li>
-                <li><strong>"Insert [style-name]"</strong> - Directly insert a specific style</li>
-            </ul>
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">\u{1F4DD} Manual Usage Methods</h3>
-            
-            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background-secondary); border-radius: 6px;">
-                <strong>Method 1: Direct callout type</strong><br>
-                <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px;">> [!your-style-name]</code>
-            </div>
-            
-            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background-secondary); border-radius: 6px;">
-                <strong>Method 2: With metadata</strong><br>
-                <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px;">> [!note] (style:your-style-name)</code>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">\u{1F4D0} Layout Systems</h3>
-            <p style="margin: 0 0 0.5rem 0; font-size: 0.9em;"><strong>1. Inline Grid (Simple):</strong> Quick alignments using <code style="background: var(--background-modifier-border); padding: 2px 4px; border-radius: 3px;">(position:cols)</code></p>
-            <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px; display: block; margin-bottom: 1rem;">> [!multi-callout]<br>> > [!info] (1:2)<br>> > [!tip] (2:2)</code>
-            
-            <p style="margin: 0 0 0.5rem 0; font-size: 0.9em;"><strong>2. Visual Layout Builder (Advanced):</strong> Create Excel-like merged grids in settings, then use their name!</p>
-            <code style="background: var(--background-modifier-border); padding: 2px 6px; border-radius: 3px; display: block;">> [!multi-callout] (my_dashboard)<br>> > [!info]<br>> > [!tip]</code>
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--interactive-accent);">\u{1F4A1} Pro Tips</h3>
-            <ul style="margin: 0; padding-left: 1.5rem;">
-                <li style="margin-bottom: 0.5rem;">Use <code style="background: var(--background-modifier-border); padding: 2px 4px; border-radius: 3px;">(title:red)</code> to override title color</li>
-                <li style="margin-bottom: 0.5rem;">Try <code style="background: var(--background-modifier-border); padding: 2px 4px; border-radius: 3px;">(no-icon)</code> for a minimalist look</li>
-                <li>Click "Metadata Reference" to see all available parameters</li>
-            </ul>
-        </div>
-
-        <div style="background: linear-gradient(135deg, #667eea 15%, #764ba2 85%); padding: 1rem; border-radius: 6px; color: var(--text-on-accent);">
-            <strong>\u26A1 Quick Tip:</strong> Assign hotkeys to your favorite styles in Settings \u2192 Hotkeys \u2192 Special Callouts
-        </div>
-    `;
-  const closeBtn = modal.createEl("button", { text: "Got it!" });
-  closeBtn.style.cssText = "margin-top: 1.5rem; padding: 0.6rem 1.5rem; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 500; width: 100%;";
-  closeBtn.onclick = () => {
-    modal.remove();
-    overlay.remove();
-  };
-  const overlay = document.createElement("div");
-  overlay.style.cssText = "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 9999;";
-  overlay.onclick = () => {
-    modal.remove();
-    overlay.remove();
-  };
-  document.body.appendChild(overlay);
-  document.body.appendChild(modal);
+var import_obsidian4 = require("obsidian");
+function showHowToUse(app) {
+  new HowToModal(app).open();
 }
+var HowToModal = class extends import_obsidian4.Modal {
+  constructor(app) {
+    super(app);
+    this.titleEl.setText("How to Use Custom Styles");
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    this.createSection(contentEl, "\u2328\uFE0F Quick Insert via Command Palette", (section) => {
+      section.createEl("p", {
+        text: "Press Ctrl/Cmd+P and type:"
+      });
+      const ul = section.createEl("ul");
+      ul.createEl("li").createEl("strong", { text: '"Insert Custom Callout"' }).parentElement.appendText(" - Browse all your saved styles");
+      ul.createEl("li").createEl("strong", { text: '"Insert [style-name]"' }).parentElement.appendText(" - Directly insert a specific style");
+    });
+    this.createSection(contentEl, "\u{1F4DD} Manual Usage Methods", (section) => {
+      this.createMethodBox(section, "Method 1: Direct callout type", "> [!your-style-name]");
+      this.createMethodBox(section, "Method 2: With metadata", "> [!note] (style:your-style-name)");
+    });
+    this.createSection(contentEl, "\u{1F4D0} Layout Systems", (section) => {
+      const p1 = section.createEl("p");
+      p1.createEl("strong", { text: "1. Inline Grid (Simple):" });
+      p1.appendText(" Quick alignments using ");
+      p1.createEl("code", { text: "(position:cols)" });
+      const code1 = section.createEl("code");
+      code1.style.setProperty("display", "block");
+      code1.style.setProperty("margin-bottom", "1rem");
+      code1.setText("> [!multi-callout]\n> > [!info] (1:2)\n> > [!tip] (2:2)");
+      const p2 = section.createEl("p");
+      p2.createEl("strong", { text: "2. Visual Layout Builder (Advanced):" });
+      p2.appendText(" Create Excel-like merged grids in settings, then use their name!");
+      section.createEl("code", { text: "> [!multi-callout] (my_dashboard)\n> > [!info]\n> > [!tip]" });
+    });
+    this.createSection(contentEl, "\u{1F4A1} Pro Tips", (section) => {
+      const ul = section.createEl("ul");
+      const tip1 = ul.createEl("li");
+      tip1.appendText("Use ");
+      tip1.createEl("code", { text: "(title:red)" });
+      tip1.appendText(" to override title color");
+      const tip2 = ul.createEl("li");
+      tip2.appendText("Try ");
+      tip2.createEl("code", { text: "(no-icon)" });
+      tip2.appendText(" for a minimalist look");
+      ul.createEl("li", { text: 'Click "Metadata Reference" to see all available parameters' });
+    });
+    const banner = contentEl.createDiv();
+    banner.setCssProps({
+      "--banner-bg": "linear-gradient(135deg, #667eea 15%, #764ba2 85%)"
+    });
+    banner.style.setProperty("background", "linear-gradient(135deg, #667eea 15%, #764ba2 85%)");
+    banner.style.setProperty("padding", "1rem");
+    banner.style.setProperty("border-radius", "6px");
+    banner.style.setProperty("color", "var(--text-on-accent)");
+    banner.createEl("strong", { text: "\u26A1 Quick Tip: " });
+    banner.appendText("Assign hotkeys to your favorite styles in Settings \u2192 Hotkeys \u2192 Special Callouts");
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  createSection(container, title, fill) {
+    const section = container.createDiv();
+    section.style.setProperty("margin-bottom", "1.5rem");
+    const h3 = section.createEl("h3", { text: title });
+    h3.style.setProperty("margin", "0 0 0.75rem 0");
+    h3.style.setProperty("color", "var(--interactive-accent)");
+    fill(section);
+  }
+  createMethodBox(container, label, code) {
+    const box = container.createDiv();
+    box.style.setProperty("margin-bottom", "1rem");
+    box.style.setProperty("padding", "1rem");
+    box.style.setProperty("background", "var(--background-secondary)");
+    box.style.setProperty("border-radius", "6px");
+    box.createEl("strong", { text: label });
+    box.createEl("br");
+    box.createEl("code", { text: code });
+  }
+};
 
 // src/modals/IconPickerModal.ts
-var import_obsidian3 = require("obsidian");
-var IconPickerModal = class extends import_obsidian3.FuzzySuggestModal {
+var import_obsidian5 = require("obsidian");
+var IconPickerModal = class extends import_obsidian5.FuzzySuggestModal {
   constructor(app, onChoose) {
     super(app);
     this.onChoose = onChoose;
     this.setPlaceholder("Search for an icon... (e.g. star, pencil, flame)");
   }
   getItems() {
-    return (0, import_obsidian3.getIconIds)();
+    return (0, import_obsidian5.getIconIds)();
   }
   getItemText(icon) {
     return icon;
@@ -1142,28 +1166,32 @@ var IconPickerModal = class extends import_obsidian3.FuzzySuggestModal {
   renderSuggestion(match, el) {
     const icon = match.item;
     el.addClass("mod-icon-item");
-    el.style.display = "flex";
-    el.style.alignItems = "center";
-    el.style.gap = "12px";
-    el.style.padding = "8px 12px";
+    el.setCssProps({
+      "display": "flex",
+      "align-items": "center",
+      "gap": "12px",
+      "padding": "8px 12px"
+    });
     const iconContainer = el.createDiv();
-    iconContainer.style.width = "24px";
-    iconContainer.style.height = "24px";
-    iconContainer.style.display = "flex";
-    iconContainer.style.alignItems = "center";
-    iconContainer.style.justifyContent = "center";
-    iconContainer.style.color = "var(--text-muted)";
-    (0, import_obsidian3.setIcon)(iconContainer, icon);
+    iconContainer.setCssProps({
+      "width": "24px",
+      "height": "24px",
+      "display": "flex",
+      "align-items": "center",
+      "justify-content": "center",
+      "color": "var(--text-muted)"
+    });
+    (0, import_obsidian5.setIcon)(iconContainer, icon);
     const textDiv = el.createDiv({ text: icon });
-    textDiv.style.fontSize = "0.9rem";
+    textDiv.setCssProps({ "font-size": "0.9rem" });
   }
-  onChooseItem(icon, evt) {
+  onChooseItem(icon, _evt) {
     this.onChoose(icon);
   }
 };
 
 // src/settings/SettingsTab.ts
-var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab {
+var SpecialCalloutsSettingTab = class extends import_obsidian6.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     // Form state
@@ -1240,16 +1268,16 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     howToBtn.style.cssText = "padding: 8px 16px; background: var(--interactive-normal); color: var(--text-normal); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: background 0.15s;";
     howToBtn.onmouseover = () => howToBtn.style.background = "var(--interactive-hover)";
     howToBtn.onmouseout = () => howToBtn.style.background = "var(--interactive-normal)";
-    (0, import_obsidian4.setIcon)(howToBtn.createSpan(), "help-circle");
+    (0, import_obsidian6.setIcon)(howToBtn.createSpan(), "help-circle");
     howToBtn.createSpan({ text: "How to Use" });
-    howToBtn.onclick = () => showHowToUse();
+    howToBtn.onclick = () => showHowToUse(this.app);
     const metadataBtn = quickRefDiv.createEl("button");
     metadataBtn.style.cssText = "padding: 8px 16px; background: var(--interactive-normal); color: var(--text-normal); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: background 0.15s;";
     metadataBtn.onmouseover = () => metadataBtn.style.background = "var(--interactive-hover)";
     metadataBtn.onmouseout = () => metadataBtn.style.background = "var(--interactive-normal)";
-    (0, import_obsidian4.setIcon)(metadataBtn.createSpan(), "list");
+    (0, import_obsidian6.setIcon)(metadataBtn.createSpan(), "list");
     metadataBtn.createSpan({ text: "Metadata Reference" });
-    metadataBtn.onclick = () => showMetadataReference();
+    metadataBtn.onclick = () => showMetadataReference(this.app);
   }
   createGeneralSettings(container) {
     const section = container.createDiv();
@@ -1263,7 +1291,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
             padding-bottom: 0.5rem;
             border-bottom: 2px solid var(--background-modifier-border);
         `;
-    new import_obsidian4.Setting(section).setName("Default Callout Metadata").setDesc('Enter the default metadata (e.g. "col:2, bg:ocean") to automatically append when using the "Insert Custom Callout" command.').addText((text) => text.setPlaceholder("col:2, bg:ocean").setValue(this.plugin.settings.defaultMetadata || "").onChange(async (value) => {
+    new import_obsidian6.Setting(section).setName("Default Callout Metadata").setDesc('Enter the default metadata (e.g. "col:2, bg:ocean") to automatically append when using the "Insert Custom Callout" command.').addText((text) => text.setPlaceholder("col:2, bg:ocean").setValue(this.plugin.settings.defaultMetadata || "").onChange(async (value) => {
       this.plugin.settings.defaultMetadata = value;
       await this.plugin.saveSettings();
     }));
@@ -1360,19 +1388,19 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     nameInput.oninput = (e) => this.builderLayoutName = e.target.value;
     const colsGroup = controlsRow.createDiv();
     colsGroup.createEl("label", { text: "Columns" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;";
-    const colsSelect = new import_obsidian4.DropdownComponent(colsGroup);
+    const colsSelect = new import_obsidian6.DropdownComponent(colsGroup);
     [1, 2, 3, 4, 5, 6, 7, 8].forEach((n) => colsSelect.addOption(n.toString(), n.toString()));
     colsSelect.setValue(this.builderCols.toString());
     const rowsGroup = controlsRow.createDiv();
     rowsGroup.createEl("label", { text: "Rows" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;";
-    const rowsSelect = new import_obsidian4.DropdownComponent(rowsGroup);
+    const rowsSelect = new import_obsidian6.DropdownComponent(rowsGroup);
     [1, 2, 3, 4, 5, 6, 7, 8].forEach((n) => rowsSelect.addOption(n.toString(), n.toString()));
     rowsSelect.setValue(this.builderRows.toString());
     const actionGroup = controlsRow.createDiv();
     actionGroup.style.cssText = "display: flex; gap: 10px; margin-left: auto;";
     const mergeBtn = actionGroup.createEl("button");
     mergeBtn.style.cssText = "padding: 6px 12px; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;";
-    (0, import_obsidian4.setIcon)(mergeBtn.createSpan(), "combine");
+    (0, import_obsidian6.setIcon)(mergeBtn.createSpan(), "combine");
     mergeBtn.createSpan({ text: "Merge" });
     mergeBtn.onclick = () => {
       if (this.builderSelectedCells.length < 2) return;
@@ -1392,7 +1420,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     };
     const splitBtn = actionGroup.createEl("button");
     splitBtn.style.cssText = "padding: 6px 12px; background: var(--background-modifier-error); color: var(--text-on-accent); border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;";
-    (0, import_obsidian4.setIcon)(splitBtn.createSpan(), "scissors");
+    (0, import_obsidian6.setIcon)(splitBtn.createSpan(), "scissors");
     splitBtn.createSpan({ text: "Split" });
     splitBtn.onclick = () => {
       if (this.builderSelectedCells.length === 0) return;
@@ -1541,22 +1569,22 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     ioGroup.style.cssText = "display: flex; gap: 8px;";
     const exportBtn = ioGroup.createEl("button");
     exportBtn.style.cssText = "padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-size: 0.8rem;";
-    (0, import_obsidian4.setIcon)(exportBtn, "upload");
+    (0, import_obsidian6.setIcon)(exportBtn, "upload");
     exportBtn.createSpan({ text: "Export All" });
     exportBtn.onclick = () => {
       const data = this.plugin.settings.customLayouts || [];
       navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
-        new import_obsidian4.Notice("All layouts copied to clipboard!");
+        new import_obsidian6.Notice("All layouts copied to clipboard!");
       });
     };
     const importBtn = ioGroup.createEl("button");
     importBtn.style.cssText = "padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-size: 0.8rem;";
-    (0, import_obsidian4.setIcon)(importBtn, "download");
+    (0, import_obsidian6.setIcon)(importBtn, "download");
     importBtn.createSpan({ text: "Import" });
     importBtn.onclick = () => {
-      const modal = new import_obsidian4.Modal(this.app);
+      const modal = new import_obsidian6.Modal(this.app);
       modal.titleEl.setText("Import Layouts (JSON)");
-      const area = new import_obsidian4.TextAreaComponent(modal.contentEl);
+      const area = new import_obsidian6.TextAreaComponent(modal.contentEl);
       area.placeholder = "Paste JSON here...";
       area.inputEl.style.width = "100%";
       area.inputEl.style.height = "200px";
@@ -1568,12 +1596,12 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
           if (Array.isArray(data)) {
             this.plugin.settings.customLayouts = data;
             await this.plugin.saveSettings();
-            new import_obsidian4.Notice("Layouts imported!");
+            new import_obsidian6.Notice("Layouts imported!");
             modal.close();
             this.display();
           }
         } catch (e) {
-          new import_obsidian4.Notice("Invalid JSON");
+          new import_obsidian6.Notice("Invalid JSON");
         }
       };
       modal.open();
@@ -1582,7 +1610,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     saveBtn.style.cssText = "padding: 8px 16px; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 600;";
     saveBtn.onclick = async () => {
       if (!this.builderLayoutName) {
-        new import_obsidian4.Notice("Please enter a layout name");
+        new import_obsidian6.Notice("Please enter a layout name");
         return;
       }
       if (!this.plugin.settings.customLayouts) {
@@ -1606,10 +1634,10 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       };
       if (existingIdx >= 0) {
         this.plugin.settings.customLayouts[existingIdx] = newLayout;
-        new import_obsidian4.Notice("Layout updated!");
+        new import_obsidian6.Notice("Layout updated!");
       } else {
         this.plugin.settings.customLayouts.push(newLayout);
-        new import_obsidian4.Notice("Layout saved!");
+        new import_obsidian6.Notice("Layout saved!");
       }
       await this.plugin.saveSettings();
       this.display();
@@ -1628,7 +1656,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
         const actionBtns = card.createDiv();
         actionBtns.style.cssText = "display: flex; gap: 5px;";
         const editBtn = actionBtns.createEl("button");
-        (0, import_obsidian4.setIcon)(editBtn, "pencil");
+        (0, import_obsidian6.setIcon)(editBtn, "pencil");
         editBtn.style.cssText = "background: transparent; border: none; cursor: pointer; color: var(--text-accent); padding: 4px;";
         editBtn.title = "Edit Layout";
         editBtn.onclick = () => {
@@ -1646,11 +1674,11 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
             initMatrix();
           }
           drawGrid();
-          new import_obsidian4.Notice(`Editing layout: ${this.builderLayoutName}`);
+          new import_obsidian6.Notice(`Editing layout: ${this.builderLayoutName}`);
           builderCard.scrollIntoView({ behavior: "smooth" });
         };
         const delBtn = actionBtns.createEl("button");
-        (0, import_obsidian4.setIcon)(delBtn, "trash");
+        (0, import_obsidian6.setIcon)(delBtn, "trash");
         delBtn.style.cssText = "background: transparent; border: none; cursor: pointer; color: var(--text-error); padding: 4px;";
         delBtn.title = "Delete Layout";
         delBtn.onclick = async () => {
@@ -1717,7 +1745,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       colorBar.style.cssText = `width: 4px; height: 24px; border-radius: 2px; background: ${style.bg};`;
       const iconSpan = row.createSpan();
       iconSpan.style.cssText = `color: ${style.bg}; display: flex; align-items: center;`;
-      (0, import_obsidian4.setIcon)(iconSpan, style.icon || "file");
+      (0, import_obsidian6.setIcon)(iconSpan, style.icon || "file");
       const nameSpan = row.createSpan({ text: styleName.charAt(0).toUpperCase() + styleName.slice(1) });
       nameSpan.style.cssText = `flex: 1; font-weight: 500; color: ${style.bg}; font-size: 0.95rem;`;
       if (isModified) {
@@ -1727,7 +1755,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       }
       const editBtn = row.createEl("button");
       editBtn.style.cssText = "padding: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; display: flex;";
-      (0, import_obsidian4.setIcon)(editBtn, "pencil");
+      (0, import_obsidian6.setIcon)(editBtn, "pencil");
       editBtn.title = "Edit";
       editBtn.onclick = (e) => {
         e.stopPropagation();
@@ -1736,7 +1764,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       if (isModified) {
         const resetBtn = row.createEl("button");
         resetBtn.style.cssText = "padding: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; display: flex;";
-        (0, import_obsidian4.setIcon)(resetBtn, "rotate-ccw");
+        (0, import_obsidian6.setIcon)(resetBtn, "rotate-ccw");
         resetBtn.title = "Reset";
         resetBtn.onclick = async (e) => {
           e.stopPropagation();
@@ -1775,7 +1803,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       card.onclick = () => this.openStandardStyleEditor(styleName);
       const iconDiv = card.createDiv();
       iconDiv.style.cssText = `color: ${style.bg}; margin-bottom: 8px; display: flex; justify-content: center;`;
-      (0, import_obsidian4.setIcon)(iconDiv, style.icon || "file");
+      (0, import_obsidian6.setIcon)(iconDiv, style.icon || "file");
       const nameDiv = card.createDiv({ text: styleName.charAt(0).toUpperCase() + styleName.slice(1) });
       nameDiv.style.cssText = `font-weight: 500; color: ${style.bg}; font-size: 0.85rem;`;
       if (isModified) {
@@ -1787,98 +1815,100 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
   openStandardStyleEditor(styleName) {
     const style = this.plugin.settings.standardStyles[styleName];
     if (!style) return;
-    const modal = document.createElement("div");
-    modal.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--background-primary);
-            border: 1px solid var(--background-modifier-border);
-            border-radius: 12px;
-            padding: 2rem;
-            max-width: 450px;
-            width: 90%;
-            z-index: 10000;
-            box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5);
-        `;
-    modal.createEl("h3", { text: `Edit "${styleName}" Style` }).style.cssText = "margin: 0 0 1.5rem 0;";
-    const previewDiv = modal.createDiv();
-    previewDiv.style.cssText = `
-            background: color-mix(in srgb, ${style.bg} 15%, transparent);
-            border-left: 4px solid ${style.bg};
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 1.5rem;
-        `;
-    previewDiv.innerHTML = `<strong style="color: ${style.titleColor || style.bg}">${style.name}</strong><br><span style="color: ${style.text || "var(--text-normal)"}">Preview text content</span>`;
+    const editorModal = new import_obsidian6.Modal(this.app);
+    editorModal.titleEl.setText(`Edit "${styleName}" Style`);
+    const { contentEl } = editorModal;
+    const previewDiv = contentEl.createDiv();
+    previewDiv.style.setProperty("background", `color-mix(in srgb, ${style.bg} 15%, transparent)`);
+    previewDiv.style.setProperty("border-left", `4px solid ${style.bg}`);
+    previewDiv.style.setProperty("border-radius", "6px");
+    previewDiv.style.setProperty("padding", "12px");
+    previewDiv.style.setProperty("margin-bottom", "1.5rem");
+    const previewTitle = previewDiv.createEl("strong", { text: style.name });
+    previewTitle.style.setProperty("color", style.titleColor || style.bg);
+    previewDiv.createEl("br");
+    const previewText = previewDiv.createEl("span", { text: "Preview text content" });
+    previewText.style.setProperty("color", style.text || "var(--text-normal)");
     const updatePreview = () => {
-      previewDiv.style.background = `color-mix(in srgb, ${style.bg} 15%, transparent)`;
-      previewDiv.style.borderLeftColor = style.bg;
-      previewDiv.innerHTML = `<strong style="color: ${style.titleColor || style.bg}">${style.name}</strong><br><span style="color: ${style.text || "var(--text-normal)"}">Preview text content</span>`;
+      previewDiv.style.setProperty("background", `color-mix(in srgb, ${style.bg} 15%, transparent)`);
+      previewDiv.style.setProperty("border-left", `4px solid ${style.bg}`);
+      previewTitle.style.setProperty("color", style.titleColor || style.bg);
+      previewText.style.setProperty("color", style.text || "var(--text-normal)");
     };
-    const bgRow = modal.createDiv();
-    bgRow.style.cssText = "display: flex; align-items: center; gap: 10px; margin-bottom: 12px;";
-    bgRow.createEl("label", { text: "Background:" }).style.cssText = "width: 100px; font-size: 0.9rem;";
+    const bgRow = contentEl.createDiv();
+    bgRow.style.setProperty("display", "flex");
+    bgRow.style.setProperty("align-items", "center");
+    bgRow.style.setProperty("gap", "10px");
+    bgRow.style.setProperty("margin-bottom", "12px");
+    bgRow.createEl("label", { text: "Background:" }).style.setProperty("width", "100px");
     const bgInput = bgRow.createEl("input", { type: "color", value: style.bg });
-    bgInput.style.cssText = "width: 40px; height: 30px; border: none; cursor: pointer;";
     bgInput.oninput = () => {
       style.bg = bgInput.value;
       style.border = bgInput.value;
       updatePreview();
     };
-    const titleRow = modal.createDiv();
-    titleRow.style.cssText = "display: flex; align-items: center; gap: 10px; margin-bottom: 12px;";
-    titleRow.createEl("label", { text: "Title Color:" }).style.cssText = "width: 100px; font-size: 0.9rem;";
+    const titleRow = contentEl.createDiv();
+    titleRow.style.setProperty("display", "flex");
+    titleRow.style.setProperty("align-items", "center");
+    titleRow.style.setProperty("gap", "10px");
+    titleRow.style.setProperty("margin-bottom", "12px");
+    titleRow.createEl("label", { text: "Title Color:" }).style.setProperty("width", "100px");
     const titleInput = titleRow.createEl("input", { type: "color", value: style.titleColor || style.bg });
-    titleInput.style.cssText = "width: 40px; height: 30px; border: none; cursor: pointer;";
     titleInput.oninput = () => {
       style.titleColor = titleInput.value;
       updatePreview();
     };
-    const textRow = modal.createDiv();
-    textRow.style.cssText = "display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;";
-    textRow.createEl("label", { text: "Text Color:" }).style.cssText = "width: 100px; font-size: 0.9rem;";
+    const textRow = contentEl.createDiv();
+    textRow.style.setProperty("display", "flex");
+    textRow.style.setProperty("align-items", "center");
+    textRow.style.setProperty("gap", "10px");
+    textRow.style.setProperty("margin-bottom", "1.5rem");
+    textRow.createEl("label", { text: "Text Color:" }).style.setProperty("width", "100px");
     const textInput = textRow.createEl("input", { type: "color", value: style.text || "#ffffff" });
-    textInput.style.cssText = "width: 40px; height: 30px; border: none; cursor: pointer;";
     textInput.oninput = () => {
       style.text = textInput.value;
       updatePreview();
     };
-    const buttons = modal.createDiv();
-    buttons.style.cssText = "display: flex; gap: 10px;";
+    const buttons = contentEl.createDiv();
+    buttons.style.setProperty("display", "flex");
+    buttons.style.setProperty("gap", "10px");
     const saveBtn = buttons.createEl("button", { text: "Save" });
-    saveBtn.style.cssText = "flex: 1; padding: 10px; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;";
-    saveBtn.onclick = async () => {
-      this.plugin.settings.standardStyles[styleName] = style;
-      await this.plugin.saveSettings();
-      modal.remove();
-      overlay.remove();
-      this.display();
+    saveBtn.style.setProperty("flex", "1");
+    saveBtn.style.setProperty("padding", "10px");
+    saveBtn.style.setProperty("background", "var(--interactive-accent)");
+    saveBtn.style.setProperty("color", "var(--text-on-accent)");
+    saveBtn.style.setProperty("border", "none");
+    saveBtn.style.setProperty("border-radius", "6px");
+    saveBtn.style.setProperty("cursor", "pointer");
+    saveBtn.onclick = () => {
+      void (async () => {
+        this.plugin.settings.standardStyles[styleName] = style;
+        await this.plugin.saveSettings();
+        editorModal.close();
+        this.display();
+      })();
     };
     const resetBtn = buttons.createEl("button", { text: "Reset" });
-    resetBtn.style.cssText = "padding: 10px 20px; background: var(--background-modifier-error); color: var(--text-on-accent); border: none; border-radius: 6px; cursor: pointer; font-weight: 500;";
-    resetBtn.onclick = async () => {
-      this.plugin.settings.standardStyles[styleName] = { ...DEFAULT_STANDARD_STYLES[styleName] };
-      await this.plugin.saveSettings();
-      modal.remove();
-      overlay.remove();
-      this.display();
+    resetBtn.style.setProperty("padding", "10px 20px");
+    resetBtn.style.setProperty("background", "var(--background-modifier-error)");
+    resetBtn.style.setProperty("color", "var(--text-on-accent)");
+    resetBtn.style.setProperty("border", "none");
+    resetBtn.style.setProperty("border-radius", "6px");
+    resetBtn.style.setProperty("cursor", "pointer");
+    resetBtn.onclick = () => {
+      void (async () => {
+        this.plugin.settings.standardStyles[styleName] = { ...DEFAULT_STANDARD_STYLES[styleName] };
+        await this.plugin.saveSettings();
+        editorModal.close();
+        this.display();
+      })();
     };
     const cancelBtn = buttons.createEl("button", { text: "Cancel" });
-    cancelBtn.style.cssText = "padding: 10px 20px; background: var(--background-secondary); color: var(--text-normal); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer;";
-    cancelBtn.onclick = () => {
-      modal.remove();
-      overlay.remove();
-    };
-    const overlay = document.createElement("div");
-    overlay.style.cssText = "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 9999;";
-    overlay.onclick = () => {
-      modal.remove();
-      overlay.remove();
-    };
-    document.body.appendChild(overlay);
-    document.body.appendChild(modal);
+    cancelBtn.style.setProperty("padding", "10px 20px");
+    cancelBtn.style.setProperty("border-radius", "6px");
+    cancelBtn.style.setProperty("cursor", "pointer");
+    cancelBtn.onclick = () => editorModal.close();
+    editorModal.open();
   }
   createCustomStylesSection(container) {
     const section = container.createDiv();
@@ -1970,7 +2000,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
             justify-content: center;
             gap: 6px;
         `;
-    (0, import_obsidian4.setIcon)(randomBtn.createSpan(), "dice");
+    (0, import_obsidian6.setIcon)(randomBtn.createSpan(), "dice");
     randomBtn.createSpan({ text: "Random" });
     randomBtn.onmouseover = () => {
       randomBtn.style.background = "var(--interactive-accent)";
@@ -2024,7 +2054,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     };
     const iconSearchBtn = iconWrapper.createEl("button");
     iconSearchBtn.style.cssText = "padding: 0 8px; cursor: pointer; border-radius: 4px; border: 1px solid var(--background-modifier-border); background: var(--interactive-normal);";
-    (0, import_obsidian4.setIcon)(iconSearchBtn, "search");
+    (0, import_obsidian6.setIcon)(iconSearchBtn, "search");
     iconSearchBtn.onclick = () => {
       new IconPickerModal(this.app, (selected) => {
         this.tempIcon = selected;
@@ -2090,7 +2120,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     const neonPicker = neonControls.createEl("input", { type: "color" });
     neonPicker.style.cssText = "width: 20px; height: 20px; border: none; padding: 0; background: transparent; cursor: pointer;";
     neonPicker.value = this.tempNeon || "#000000";
-    const neonToggle = new import_obsidian4.ToggleComponent(neonControls);
+    const neonToggle = new import_obsidian6.ToggleComponent(neonControls);
     neonToggle.setValue(!!this.tempNeon);
     neonToggle.onChange((val) => {
       if (val) {
@@ -2112,7 +2142,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     typoGrid.style.cssText = "display: grid; grid-template-columns: 2fr 1fr; gap: 12px;";
     const fontGroup = typoGrid.createDiv();
     fontGroup.createEl("label", { text: "Font Family" }).style.cssText = "display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;";
-    const fontSelect = new import_obsidian4.DropdownComponent(fontGroup);
+    const fontSelect = new import_obsidian6.DropdownComponent(fontGroup);
     fontSelect.selectEl.style.width = "100%";
     fontSelect.addOption("", "Default");
     Object.keys(FONT_FAMILIES).forEach((f) => fontSelect.addOption(f, f.charAt(0).toUpperCase() + f.slice(1)));
@@ -2123,7 +2153,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     });
     const sizeGroup = typoGrid.createDiv();
     sizeGroup.createEl("label", { text: "Size" }).style.cssText = "display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;";
-    const sizeSelect = new import_obsidian4.DropdownComponent(sizeGroup);
+    const sizeSelect = new import_obsidian6.DropdownComponent(sizeGroup);
     sizeSelect.selectEl.style.width = "100%";
     Object.keys(FONT_SIZES).forEach((s) => sizeSelect.addOption(s, s));
     sizeSelect.setValue(this.tempFontSize.toString());
@@ -2136,7 +2166,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     const bsRow = structPanel.createDiv();
     bsRow.style.cssText = "margin-bottom: 12px;";
     bsRow.createEl("label", { text: "Border Style" }).style.cssText = "display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;";
-    const bsSelect = new import_obsidian4.DropdownComponent(bsRow);
+    const bsSelect = new import_obsidian6.DropdownComponent(bsRow);
     bsSelect.selectEl.style.width = "100%";
     ["solid", "dashed", "dotted", "double", "groove", "ridge", "inset", "outset", "none"].forEach((s) => bsSelect.addOption(s, s));
     bsSelect.setValue(this.tempBorderStyle || "solid");
@@ -2152,7 +2182,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       header.createEl("label", { text: label }).style.cssText = "font-size: 0.75rem; font-weight: 600; color: var(--text-muted);";
       const valLabel = header.createSpan({ text: value || "Default" });
       valLabel.style.fontSize = "0.75rem";
-      const slider = new import_obsidian4.SliderComponent(row);
+      const slider = new import_obsidian6.SliderComponent(row);
       slider.sliderEl.style.width = "100%";
       slider.setLimits(min, max, step);
       const numVal = parseFloat(value) || 0;
@@ -2173,7 +2203,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       const row = layoutPanel.createDiv();
       row.style.cssText = "display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;";
       row.createSpan({ text: label }).style.fontWeight = "500";
-      const t = new import_obsidian4.ToggleComponent(row);
+      const t = new import_obsidian6.ToggleComponent(row);
       t.setValue(value);
       t.onChange((v) => {
         setter(v);
@@ -2195,23 +2225,23 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     leftGroup.style.cssText = "margin-right: auto; display: flex; gap: 8px;";
     const exportBtn = leftGroup.createEl("button");
     exportBtn.style.cssText = "font-size: 0.8rem; padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;";
-    (0, import_obsidian4.setIcon)(exportBtn, "upload");
+    (0, import_obsidian6.setIcon)(exportBtn, "upload");
     exportBtn.createSpan({ text: "Export" });
     exportBtn.onclick = () => {
       const styleData = this.getStyleFromForm();
       navigator.clipboard.writeText(JSON.stringify(styleData, null, 2)).then(() => {
-        new import_obsidian4.Notice("Style JSON copied to clipboard!");
+        new import_obsidian6.Notice("Style JSON copied to clipboard!");
       });
     };
     const importBtn = leftGroup.createEl("button");
     importBtn.style.cssText = "font-size: 0.8rem; padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;";
-    (0, import_obsidian4.setIcon)(importBtn, "download");
+    (0, import_obsidian6.setIcon)(importBtn, "download");
     importBtn.createSpan({ text: "Import" });
     importBtn.onclick = () => {
       new ImportStyleModal(this.app, this.plugin.settings, (imported) => {
         this.loadStyleToForm(imported);
         this.updatePreview(previewBox);
-        new import_obsidian4.Notice("Imported!");
+        new import_obsidian6.Notice("Imported!");
       }).open();
     };
     const cancelBtn = row.createEl("button", { text: "Reset" });
@@ -2246,7 +2276,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     iconInput.value = this.tempIcon;
     const iconBtn = iconWrapper.createEl("button");
     iconBtn.style.cssText = "padding: 0 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 6px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;";
-    (0, import_obsidian4.setIcon)(iconBtn, "search");
+    (0, import_obsidian6.setIcon)(iconBtn, "search");
     iconBtn.title = "Browse Icons";
     iconBtn.onmouseover = () => {
       iconBtn.style.borderColor = "var(--interactive-accent)";
@@ -2267,7 +2297,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     typoRow.style.cssText = "display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px;";
     const fontGroup = typoRow.createDiv();
     fontGroup.createEl("label", { text: "Font Family" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 4px;";
-    const fontSelect = new import_obsidian4.DropdownComponent(fontGroup);
+    const fontSelect = new import_obsidian6.DropdownComponent(fontGroup);
     fontSelect.selectEl.style.width = "100%";
     fontSelect.selectEl.style.background = "var(--background-primary)";
     fontSelect.addOption("", "Default");
@@ -2279,7 +2309,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     });
     const sizeGroup = typoRow.createDiv();
     sizeGroup.createEl("label", { text: "Size" }).style.cssText = "display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 4px;";
-    const sizeSelect = new import_obsidian4.DropdownComponent(sizeGroup);
+    const sizeSelect = new import_obsidian6.DropdownComponent(sizeGroup);
     sizeSelect.selectEl.style.width = "100%";
     sizeSelect.selectEl.style.background = "var(--background-primary)";
     Object.keys(FONT_SIZES).forEach((s) => sizeSelect.addOption(s, s === "3" ? "3 (Normal)" : s));
@@ -2397,7 +2427,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
             font-size: 0.8rem;
             transition: all 0.15s;
         `;
-    (0, import_obsidian4.setIcon)(exportBtn, "upload");
+    (0, import_obsidian6.setIcon)(exportBtn, "upload");
     const expLabel = exportBtn.createSpan({ text: "Export" });
     exportBtn.title = "Copy current style to clipboard as JSON";
     exportBtn.onmouseover = () => {
@@ -2422,15 +2452,15 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
         titleCenter: this.tempTitleCenter
       };
       navigator.clipboard.writeText(JSON.stringify(styleData, null, 2)).then(() => {
-        new import_obsidian4.Notice("Style JSON copied to clipboard!");
+        new import_obsidian6.Notice("Style JSON copied to clipboard!");
         exportBtn.style.backgroundColor = "var(--interactive-success)";
         exportBtn.style.color = "white";
-        setTimeout(() => {
+        window.setTimeout(() => {
           exportBtn.style.background = "var(--background-primary)";
           exportBtn.style.color = "var(--text-muted)";
         }, 1e3);
       }).catch((err) => {
-        new import_obsidian4.Notice("Failed to copy to clipboard.");
+        new import_obsidian6.Notice("Failed to copy to clipboard.");
         console.error(err);
       });
     };
@@ -2448,7 +2478,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
             font-size: 0.8rem;
             transition: all 0.15s;
         `;
-    (0, import_obsidian4.setIcon)(importBtn, "download");
+    (0, import_obsidian6.setIcon)(importBtn, "download");
     importBtn.createSpan({ text: "Import" });
     importBtn.title = "Paste JSON style";
     importBtn.onmouseover = () => {
@@ -2470,7 +2500,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
         this.tempIcon = importedStyle.icon || this.tempIcon;
         this.tempBoldBorder = importedStyle.boldBorder || false;
         this.display();
-        new import_obsidian4.Notice("Style imported successfully!");
+        new import_obsidian6.Notice("Style imported successfully!");
       });
       modal.open();
     };
@@ -2520,7 +2550,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
           const error = creatorCard.createDiv({ cls: "duplicate-error" });
           error.style.cssText = "padding: 10px; background: var(--background-modifier-error); color: var(--text-on-accent); border-radius: 6px; margin-top: 10px; font-size: 0.9rem;";
           error.textContent = `A style named "${this.tempName}" already exists. Please use a different name.`;
-          setTimeout(() => error.remove(), 3e3);
+          window.setTimeout(() => error.remove(), 3e3);
           return;
         }
         const newStyle = {
@@ -2585,7 +2615,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     actions.style.cssText = "display: flex; gap: 4px;";
     const editBtn = actions.createEl("button");
     editBtn.style.cssText = "padding: 4px 8px; background: transparent; border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; color: var(--text-muted);";
-    (0, import_obsidian4.setIcon)(editBtn, "pencil");
+    (0, import_obsidian6.setIcon)(editBtn, "pencil");
     editBtn.onclick = () => {
       this.editingIndex = i;
       this.tempName = s.name;
@@ -2605,7 +2635,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     };
     const deleteBtn = actions.createEl("button");
     deleteBtn.style.cssText = "padding: 4px 8px; background: transparent; border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; color: var(--text-muted);";
-    (0, import_obsidian4.setIcon)(deleteBtn, "trash-2");
+    (0, import_obsidian6.setIcon)(deleteBtn, "trash-2");
     deleteBtn.onclick = async () => {
       this.plugin.settings.customStyles.splice(i, 1);
       await this.plugin.saveSettings();
@@ -2626,7 +2656,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       previewTitle.style.cssText = `display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.9rem; color: ${s.titleColor || s.bg};`;
       const icon = previewTitle.createSpan();
       icon.style.cssText = `display: inline-flex; color: ${s.titleColor || s.bg};`;
-      (0, import_obsidian4.setIcon)(icon, s.icon || "box");
+      (0, import_obsidian6.setIcon)(icon, s.icon || "box");
       previewTitle.createSpan({ text: "Sample Callout" });
       const previewContent = preview.createDiv();
       previewContent.style.cssText = `color: ${s.text}; font-size: 0.85rem; margin-top: 6px; line-height: 1.4;`;
@@ -2660,7 +2690,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     summary.textContent = "Standard Colors";
     Object.keys(this.plugin.settings.standardColors).forEach((colorName) => {
       if (colorName === "gray") return;
-      const setting = new import_obsidian4.Setting(section).setName(colorName.charAt(0).toUpperCase() + colorName.slice(1));
+      const setting = new import_obsidian6.Setting(section).setName(colorName.charAt(0).toUpperCase() + colorName.slice(1));
       setting.controlEl.style.cssText = "display: flex; gap: 5px; flex-wrap: wrap;";
       setting.addText((t) => {
         t.inputEl.style.cssText = "width: 90px; font-family: monospace;";
@@ -2741,7 +2771,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       hexEl.style.cssText = "font-family: monospace; font-size: 0.85rem; color: var(--text-muted);";
       const deleteBtn = colorRow.createEl("button");
       deleteBtn.style.cssText = "padding: 6px 10px; background: transparent; border: 1px solid var(--background-modifier-border); border-radius: 4px; cursor: pointer; color: var(--text-muted);";
-      (0, import_obsidian4.setIcon)(deleteBtn, "trash-2");
+      (0, import_obsidian6.setIcon)(deleteBtn, "trash-2");
       deleteBtn.onclick = async () => {
         this.plugin.settings.customColors.splice(i, 1);
         await this.plugin.saveSettings();
@@ -2815,7 +2845,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
   }
   async saveCurrentStyle() {
     if (!this.tempName.trim()) {
-      new import_obsidian4.Notice("Please enter a name");
+      new import_obsidian6.Notice("Please enter a name");
       return;
     }
     const newStyle = this.getStyleFromForm();
@@ -2824,13 +2854,13 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       this.editingIndex = null;
     } else {
       if (this.plugin.settings.customStyles.some((s) => s.name === newStyle.name)) {
-        new import_obsidian4.Notice("Name already exists!");
+        new import_obsidian6.Notice("Name already exists!");
         return;
       }
       this.plugin.settings.customStyles.push(newStyle);
     }
     await this.plugin.saveSettings();
-    new import_obsidian4.Notice("Style saved!");
+    new import_obsidian6.Notice("Style saved!");
   }
   updatePreview(el) {
     el.empty();
@@ -2900,7 +2930,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       const i = t.createDiv({ cls: "callout-icon" });
       i.style.color = this.tempTitleColor;
       i.style.display = "flex";
-      (0, import_obsidian4.setIcon)(i, this.tempIcon || "pencil");
+      (0, import_obsidian6.setIcon)(i, this.tempIcon || "pencil");
     }
     const titleInner = t.createDiv({ cls: "callout-title-inner", text: this.tempName || "Callout Preview" });
     if (this.tempFontSize) {
@@ -2956,7 +2986,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     return `#${f(0)}${f(8)}${f(4)}`;
   }
 };
-var ImportStyleModal = class extends import_obsidian4.Modal {
+var ImportStyleModal = class extends import_obsidian6.Modal {
   constructor(app, settings, onSubmit) {
     super(app);
     this.jsonText = "";
@@ -3037,7 +3067,7 @@ var ImportStyleModal = class extends import_obsidian4.Modal {
     const helpText = contentEl.createEl("p", { text: "Paste a JSON style object OR a callout with metadata (e.g., > [!callout] (col:2, neon:red))." });
     helpText.style.color = "var(--text-muted)";
     helpText.style.fontSize = "0.9rem";
-    const textArea = new import_obsidian4.TextAreaComponent(contentEl);
+    const textArea = new import_obsidian6.TextAreaComponent(contentEl);
     textArea.inputEl.style.width = "100%";
     textArea.inputEl.style.height = "150px";
     textArea.inputEl.style.fontFamily = "monospace";
@@ -3048,7 +3078,7 @@ var ImportStyleModal = class extends import_obsidian4.Modal {
     });
     const buttonDiv = contentEl.createDiv();
     buttonDiv.style.cssText = "display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;";
-    new import_obsidian4.ButtonComponent(buttonDiv).setButtonText("Import").setCta().onClick(() => {
+    new import_obsidian6.ButtonComponent(buttonDiv).setButtonText("Import").setCta().onClick(() => {
       const text = this.jsonText.trim();
       if (!text) return;
       try {
@@ -3056,7 +3086,7 @@ var ImportStyleModal = class extends import_obsidian4.Modal {
         if (parsed && typeof parsed === "object") {
           this.onSubmit(parsed);
           this.close();
-          new import_obsidian4.Notice(`Imported style: ${parsed.name || "custom-style"}`);
+          new import_obsidian6.Notice(`Imported style: ${parsed.name || "custom-style"}`);
           return;
         }
       } catch (e) {
@@ -3171,7 +3201,7 @@ var ImportStyleModal = class extends import_obsidian4.Modal {
           if (config.fontSize) baseStyle.fontSize = config.fontSize;
           this.onSubmit(baseStyle);
           this.close();
-          new import_obsidian4.Notice(`Imported style: ${baseStyle.name} ` + (inherited ? "(Inherited)" : ""));
+          new import_obsidian6.Notice(`Imported style: ${baseStyle.name} ` + (inherited ? "(Inherited)" : ""));
           return;
         } catch (err) {
           console.error("Metadata parsing failed", err);
@@ -3179,15 +3209,15 @@ var ImportStyleModal = class extends import_obsidian4.Modal {
       } else if (detectedType && baseStyle.name.endsWith("-copy")) {
         this.onSubmit(baseStyle);
         this.close();
-        new import_obsidian4.Notice(`Imported style base: ${baseStyle.name}`);
+        new import_obsidian6.Notice(`Imported style base: ${baseStyle.name}`);
         return;
       } else if (inherited) {
         this.onSubmit(baseStyle);
         this.close();
-        new import_obsidian4.Notice(`Imported standard style: ${baseStyle.name}`);
+        new import_obsidian6.Notice(`Imported standard style: ${baseStyle.name}`);
         return;
       }
-      new import_obsidian4.Notice("Could not extract valid style. Use JSON or Callout syntax (e.g. > [!type] (metadata)).");
+      new import_obsidian6.Notice("Could not extract valid style. Use JSON or Callout syntax (e.g. > [!type] (metadata)).");
     });
   }
   onClose() {
@@ -3196,8 +3226,8 @@ var ImportStyleModal = class extends import_obsidian4.Modal {
 };
 
 // src/modals/AdvancedBuilderModal.ts
-var import_obsidian5 = require("obsidian");
-var AdvancedBuilderModal = class extends import_obsidian5.Modal {
+var import_obsidian7 = require("obsidian");
+var AdvancedBuilderModal = class extends import_obsidian7.Modal {
   constructor(app, plugin, editor) {
     super(app);
     // Callout parameters
@@ -3214,23 +3244,23 @@ var AdvancedBuilderModal = class extends import_obsidian5.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.createEl("h2", { text: "Advanced Callout Builder" });
-    new import_obsidian5.Setting(contentEl).setName("Callout Type").setDesc("Standard Obsidian callout types (note, tip, warning...)").addText((text) => text.setPlaceholder("note").setValue(this.type).onChange((value) => this.type = value || "note"));
-    new import_obsidian5.Setting(contentEl).setName("Background Color").setDesc("Hex code or standard color name").addText((text) => text.setPlaceholder("#ff0000 or red").setValue(this.bg).onChange((value) => this.bg = value));
-    const iconSetting = new import_obsidian5.Setting(contentEl).setName("Icon").setDesc("Choose a Lucide icon");
+    new import_obsidian7.Setting(contentEl).setName("Callout Type").setDesc("Standard Obsidian callout types (note, tip, warning...)").addText((text) => text.setPlaceholder("note").setValue(this.type).onChange((value) => this.type = value || "note"));
+    new import_obsidian7.Setting(contentEl).setName("Background Color").setDesc("Hex code or standard color name").addText((text) => text.setPlaceholder("#ff0000 or red").setValue(this.bg).onChange((value) => this.bg = value));
+    const iconSetting = new import_obsidian7.Setting(contentEl).setName("Icon").setDesc("Choose a Lucide icon");
     const iconPreview = iconSetting.nameEl.createSpan();
     iconPreview.style.marginLeft = "10px";
-    if (this.icon) (0, import_obsidian5.setIcon)(iconPreview, this.icon);
+    if (this.icon) (0, import_obsidian7.setIcon)(iconPreview, this.icon);
     iconSetting.addButton((btn) => btn.setButtonText("Select Icon").onClick(() => {
       new IconPickerModal(this.app, (selected) => {
         this.icon = selected;
         iconPreview.empty();
-        (0, import_obsidian5.setIcon)(iconPreview, selected);
+        (0, import_obsidian7.setIcon)(iconPreview, selected);
       }).open();
     }));
-    new import_obsidian5.Setting(contentEl).setName("Corner Radius").setDesc("Border radius in pixels").addSlider((slider) => slider.setLimits(0, 30, 1).setValue(parseInt(this.radius) || 4).onChange((value) => this.radius = value.toString()));
-    new import_obsidian5.Setting(contentEl).setName("Compact Mode").setDesc("Reduced padding for dense layouts").addToggle((toggle) => toggle.setValue(this.isCompact).onChange((value) => this.isCompact = value));
-    new import_obsidian5.Setting(contentEl).setName("Center Align").setDesc("Center all text and title").addToggle((toggle) => toggle.setValue(this.isCenter).onChange((value) => this.isCenter = value));
-    new import_obsidian5.Setting(contentEl).addButton((btn) => btn.setButtonText("Insert Callout").setCta().onClick(() => {
+    new import_obsidian7.Setting(contentEl).setName("Corner Radius").setDesc("Border radius in pixels").addSlider((slider) => slider.setLimits(0, 30, 1).setValue(parseInt(this.radius) || 4).onChange((value) => this.radius = value.toString()));
+    new import_obsidian7.Setting(contentEl).setName("Compact Mode").setDesc("Reduced padding for dense layouts").addToggle((toggle) => toggle.setValue(this.isCompact).onChange((value) => this.isCompact = value));
+    new import_obsidian7.Setting(contentEl).setName("Center Align").setDesc("Center all text and title").addToggle((toggle) => toggle.setValue(this.isCenter).onChange((value) => this.isCenter = value));
+    new import_obsidian7.Setting(contentEl).addButton((btn) => btn.setButtonText("Insert Callout").setCta().onClick(() => {
       this.insertCallout();
       this.close();
     })).addButton((btn) => btn.setButtonText("Cancel").onClick(() => this.close()));
@@ -3256,7 +3286,7 @@ var AdvancedBuilderModal = class extends import_obsidian5.Modal {
 };
 
 // main.ts
-var SpecialCallouts = class extends import_obsidian6.Plugin {
+var SpecialCallouts = class extends import_obsidian8.Plugin {
   async onload() {
     await this.loadSettings();
     this.processor = new CalloutProcessor(this.settings);
@@ -3358,7 +3388,7 @@ var SpecialCallouts = class extends import_obsidian6.Plugin {
       id: "show-metadata-reference",
       name: "Show Metadata Reference",
       callback: () => {
-        showMetadataReference();
+        showMetadataReference(this.app);
       }
     });
     this.settings.customStyles.forEach((style) => {

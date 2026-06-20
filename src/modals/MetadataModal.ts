@@ -1,136 +1,145 @@
 /**
  * Special Callouts - Metadata Reference Modal
- * Shows all available metadata parameters
+ * Shows all available metadata parameters using Obsidian's safe Modal API
  */
+
+import { App, Modal } from 'obsidian';
 
 /**
  * Creates and displays the metadata reference modal
  */
-export function showMetadataReference(): void {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: var(--background-primary);
-        border: 1px solid var(--background-modifier-border);
-        border-radius: 16px;
-        padding: 2.5rem;
-        max-width: 700px;
-        width: 90%;
-        max-height: 85vh;
-        overflow-y: auto;
-        z-index: 10000;
-        box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5);
-    `;
+export function showMetadataReference(app: App): void {
+    new MetadataReferenceModal(app).open();
+}
 
-    const title = modal.createEl('h2', { text: 'Metadata Reference' });
-    title.style.cssText = 'margin: 0 0 2rem 0; font-size: 1.8rem; font-weight: 700; color: var(--text-normal); letter-spacing: -0.02em;';
+class MetadataReferenceModal extends Modal {
+    constructor(app: App) {
+        super(app);
+        this.titleEl.setText('Metadata Reference');
+    }
 
-    const content = modal.createDiv();
-    content.innerHTML = `
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">🎨 Colors</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>bg:red</code> or <code>bg:#ff0000</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Background color</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>text:white</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Content text color</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>title:cyan</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Title text color</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>link:orange</code></td><td style="padding: 10px 0; color: var(--text-muted);">Link color</td></tr>
-            </table>
-        </div>
+    onOpen(): void {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.addClass('sc-metadata-modal');
 
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">Aa Typography</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>font:mono</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Monospace font</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>font:serif</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Serif font</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>font:hand</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Handwritten style</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>font-size:1</code> to <code>5</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Font size (3 is default)</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>text:dark-border</code></td><td style="padding: 10px 0; color: var(--text-muted);">Dark outline on text</td></tr>
-            </table>
-        </div>
+        // Colors
+        this.createTable(contentEl, '🎨 Colors', [
+            ['bg:red or bg:#ff0000', 'Background color'],
+            ['text:white', 'Content text color'],
+            ['title:cyan', 'Title text color'],
+            ['link:orange', 'Link color'],
+        ]);
 
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">✨ Text Border (Readability)</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>text:dark-border</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Dark outline on text</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>text:light-border</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Light outline on text</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>text:(white, dark-border)</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Grouped: color + border</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>title:(cyan, dark-border)</code></td><td style="padding: 10px 0; color: var(--text-muted);">Same for title</td></tr>
-            </table>
-        </div>
+        // Typography
+        this.createTable(contentEl, 'Aa Typography', [
+            ['font:mono', 'Monospace font'],
+            ['font:serif', 'Serif font'],
+            ['font:hand', 'Handwritten style'],
+            ['font-size:1 to 5', 'Font size (3 is default)'],
+            ['text:dark-border', 'Dark outline on text'],
+        ]);
 
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">🎨 Effects</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>neon:#00f2ff</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Neon border with glow</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>gradient:blue-purple</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">2-color gradient background</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border:red</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Border color</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border:none</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Remove all borders</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border-width:4</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Border thickness (px)</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>border-style:dashed</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">dashed, dotted, double, solid</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>radius:20</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Corner roundness (px)</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>no-icon</code></td><td style="padding: 10px 0; color: var(--text-muted);">Hide the callout icon</td></tr>
-            </table>
-        </div>
+        // Text Border
+        this.createTable(contentEl, '✨ Text Border (Readability)', [
+            ['text:dark-border', 'Dark outline on text'],
+            ['text:light-border', 'Light outline on text'],
+            ['text:(white, dark-border)', 'Grouped: color + border'],
+            ['title:(cyan, dark-border)', 'Same for title'],
+        ]);
 
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">📊 Layout</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); width: 45%; color: var(--code-normal);"><code>col:3</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Multi-column list (inside callout)</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>compact</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Reduce padding (dense mode)</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>center</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Center title and content</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>title:center</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Center title only</td></tr>
-                <tr><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--code-normal);"><code>1:3</code></td><td style="padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); color: var(--text-muted);">Grid: position 1 of 3 columns</td></tr>
-                <tr><td style="padding: 10px 0; color: var(--code-normal);"><code>1:3:2</code></td><td style="padding: 10px 0; color: var(--text-muted);">Grid: pos 1, 3 cols, row 2</td></tr>
-            </table>
-        </div>
+        // Effects
+        this.createTable(contentEl, '🎨 Effects', [
+            ['neon:#00f2ff', 'Neon border with glow'],
+            ['gradient:blue-purple', '2-color gradient background'],
+            ['border:red', 'Border color'],
+            ['border:none', 'Remove all borders'],
+            ['border-width:4', 'Border thickness (px)'],
+            ['border-style:dashed', 'dashed, dotted, double, solid'],
+            ['radius:20', 'Corner roundness (px)'],
+            ['no-icon', 'Hide the callout icon'],
+        ]);
 
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin: 0 0 1rem 0; font-weight: 600; border-bottom: 2px solid var(--interactive-accent); padding-bottom: 0.5rem;">⚡ Presets</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr><td style="padding: 10px 0; width: 45%; color: var(--code-normal);"><code>style:my-style</code></td><td style="padding: 10px 0; color: var(--text-muted);">Apply saved custom style</td></tr>
-            </table>
-        </div>
+        // Layout
+        this.createTable(contentEl, '📊 Layout', [
+            ['col:3', 'Multi-column list (inside callout)'],
+            ['compact', 'Reduce padding (dense mode)'],
+            ['center', 'Center title and content'],
+            ['title:center', 'Center title only'],
+            ['1:3', 'Grid: position 1 of 3 columns'],
+            ['1:3:2', 'Grid: pos 1, 3 cols, row 2'],
+        ]);
 
-        <div style="background: var(--background-primary-alt); padding: 1rem; border-radius: 8px; border: 1px solid var(--background-modifier-border); margin-bottom: 1rem;">
-            <strong style="color: var(--text-accent);">💡 Example:</strong><br>
-            <code style="display: block; margin-top: 0.5rem; padding: 0.5rem; background: var(--background-secondary); border-radius: 4px;">(bg:#1a1a2e, text:(white, dark-border), neon:#00f2ff, radius:10)</code>
-        </div>
+        // Presets
+        this.createTable(contentEl, '⚡ Presets', [
+            ['style:my-style', 'Apply saved custom style'],
+        ]);
 
-        <div style="background: var(--background-primary-alt); padding: 1rem; border-radius: 8px; border: 1px solid var(--background-modifier-border);">
-            <strong style="color: var(--text-accent);">Pro Tip:</strong> Use <code>Ctrl/Cmd+P</code> and type "Insert Custom Callout" to quickly access your styles.
-        </div>
-    `;
+        // Example box
+        const exampleBox = contentEl.createDiv();
+        exampleBox.style.setProperty('background', 'var(--background-primary-alt)');
+        exampleBox.style.setProperty('padding', '1rem');
+        exampleBox.style.setProperty('border-radius', '8px');
+        exampleBox.style.setProperty('border', '1px solid var(--background-modifier-border)');
+        exampleBox.style.setProperty('margin-bottom', '1rem');
+        exampleBox.createEl('strong', { text: '💡 Example:' }).style.setProperty('color', 'var(--text-accent)');
+        exampleBox.createEl('br');
+        const exCode = exampleBox.createEl('code', {
+            text: '(bg:#1a1a2e, text:(white, dark-border), neon:#00f2ff, radius:10)',
+        });
+        exCode.style.setProperty('display', 'block');
+        exCode.style.setProperty('margin-top', '0.5rem');
+        exCode.style.setProperty('padding', '0.5rem');
+        exCode.style.setProperty('background', 'var(--background-secondary)');
+        exCode.style.setProperty('border-radius', '4px');
 
-    const closeBtn = modal.createEl('button', { text: 'Close' });
-    closeBtn.style.cssText = `
-        margin-top: 2rem;
-        padding: 0.8rem 1.5rem;
-        background: var(--interactive-accent);
-        color: var(--text-on-accent);
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        width: 100%;
-        transition: opacity 0.2s ease;
-    `;
-    closeBtn.onmouseover = () => closeBtn.style.opacity = '0.9';
-    closeBtn.onmouseout = () => closeBtn.style.opacity = '1';
-    closeBtn.onclick = () => {
-        modal.remove();
-        overlay.remove();
-    };
+        // Pro tip box
+        const tipBox = contentEl.createDiv();
+        tipBox.style.setProperty('background', 'var(--background-primary-alt)');
+        tipBox.style.setProperty('padding', '1rem');
+        tipBox.style.setProperty('border-radius', '8px');
+        tipBox.style.setProperty('border', '1px solid var(--background-modifier-border)');
+        tipBox.createEl('strong', { text: 'Pro Tip: ' }).style.setProperty('color', 'var(--text-accent)');
+        tipBox.appendText('Use ');
+        tipBox.createEl('code', { text: 'Ctrl/Cmd+P' });
+        tipBox.appendText(' and type "Insert Custom Callout" to quickly access your styles.');
+    }
 
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 9999;';
-    overlay.onclick = () => {
-        modal.remove();
-        overlay.remove();
-    };
+    onClose(): void {
+        this.contentEl.empty();
+    }
 
-    document.body.appendChild(overlay);
-    document.body.appendChild(modal);
+    private createTable(container: HTMLElement, title: string, rows: [string, string][]): void {
+        const section = container.createDiv();
+        section.style.setProperty('margin-bottom', '2rem');
+
+        const h3 = section.createEl('h3', { text: title });
+        h3.style.setProperty('margin', '0 0 1rem 0');
+        h3.style.setProperty('font-weight', '600');
+        h3.style.setProperty('border-bottom', '2px solid var(--interactive-accent)');
+        h3.style.setProperty('padding-bottom', '0.5rem');
+
+        const table = section.createEl('table');
+        table.style.setProperty('width', '100%');
+        table.style.setProperty('border-collapse', 'collapse');
+        table.style.setProperty('font-size', '0.9rem');
+
+        rows.forEach(([param, desc], i) => {
+            const tr = table.createEl('tr');
+            const isLast = i === rows.length - 1;
+
+            const td1 = tr.createEl('td');
+            td1.style.setProperty('padding', '10px 0');
+            td1.style.setProperty('width', '45%');
+            td1.style.setProperty('color', 'var(--code-normal)');
+            if (!isLast) td1.style.setProperty('border-bottom', '1px solid var(--background-modifier-border)');
+            td1.createEl('code', { text: param });
+
+            const td2 = tr.createEl('td');
+            td2.style.setProperty('padding', '10px 0');
+            td2.style.setProperty('color', 'var(--text-muted)');
+            if (!isLast) td2.style.setProperty('border-bottom', '1px solid var(--background-modifier-border)');
+            td2.setText(desc);
+        });
+    }
 }
