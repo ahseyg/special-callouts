@@ -1,38 +1,48 @@
+<p align="center">
+  <a href="https://community.obsidian.md/plugins/special-callouts"><img src="https://img.shields.io/badge/Obsidian-Install-7c3aed?logo=obsidian&logoColor=white" alt="Install from Obsidian"/></a>
+  <img src="https://img.shields.io/github/stars/ahseyg/special-callouts?style=flat&color=3498db" alt="Stars"/>
+  <img src="https://img.shields.io/github/issues/ahseyg/special-callouts?style=flat&color=e74c3c" alt="Issues"/>
+  <img src="https://img.shields.io/github/license/ahseyg/special-callouts?style=flat&color=2ecc71" alt="License"/>
+  <img src="https://img.shields.io/github/v/release/ahseyg/special-callouts?style=flat&color=f39c12" alt="Version"/>
+</p>
+
+<p align="center">
+  <a href="USAGE_GUIDE.md">Usage Guide</a> · <a href="README_TR.md">Türkçe</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Report Bug</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Request Feature</a>
+</p>
+
 # Special Callouts for Obsidian
 
-**Transform your Obsidian notes with premium, dynamic, and fully customizable callouts.**
+Transform your Obsidian notes with premium, dynamic, and fully customizable callouts. Turn generic boxes into magazine-quality layouts, code terminals, or neon-glowing alerts. Customize everything directly from your markdown — or create reusable presets in the visual settings panel.
 
-Turn boring generic boxes into magazine-quality layouts, code terminals, or neon-glowing alerts. Customize everything directly from your markdown — or create reusable presets in the visual settings panel.
-
-**Open source** · MIT License · Contributions welcome!
+**Open source** · MIT License · Contributions welcome
 
 ---
 
-## ✨ Features at a Glance
+## Features
 
-- **Infinite Customization** — Background, text, borders, icons — all from inline markdown
-- **Advanced Layouts** — Multi-column lists, side-by-side grids, dashboards
-- **Visual Layout Builder** — Drag-and-merge grid designer in settings
-- **Typography Control** — Switch fonts and sizes per callout
-- **Visual Effects** — Gradients, neon glows, custom borders
-- **Center & Compact** — Center-align content or shrink padding for dense views
-- **Dataview Integration** — Column layouts work with Dataview tasks and lists
-- **Icon Metadata** — Set any Lucide icon per callout via `icon:name`
+- **Inline customization** — background, text, border, gradient, neon, icon — directly in markdown
+- **Custom style presets** — design once, reuse by name
+- **Multi-column lists** — split any list into 2–4 columns
+- **Visual layout builder** — drag-and-merge grid designer
+- **Typography control** — 5 font families, 5 size scales
+- **Neon and gradient effects** — glowing borders, smooth color transitions
+- **Dataview integration** — column layouts work with Dataview queries
+- **Import/Export** — share styles as JSON between vaults
 
 ---
 
 ## Quick Start
 
-### 1. Inline Customization
+### Inline Parameters
 
-Add parameters inside parentheses `( )` right after the callout type:
+Add parameters inside parentheses right after the callout type:
 
 ```markdown
 > [!note] (bg:#2ecc71, text:white) Hello World
 > This is a green callout with white text.
 ```
 
-### 2. Custom Style Presets
+### Custom Presets
 
 Create a style in **Settings → Special Callouts**, name it (e.g., `terminal`), and use it anywhere:
 
@@ -46,389 +56,154 @@ Or apply it to any standard callout:
 
 ```markdown
 > [!info] (style:terminal)
-> This info box now looks like a terminal!
+> This info box now looks like a terminal.
 ```
 
 ---
 
-## Metadata Reference
+## Screenshots
 
-Customize any callout: `> [!type] (param:value, param2:value2) Title`
+### Colors, Gradients and Effects
 
-### Colors & Visuals
-| Parameter | Example | Description |
-| :--- | :--- | :--- |
-| `bg` | `bg:blue` / `bg:#ff0000` | Background color |
-| `text` | `text:white` | Content text color |
-| `title` | `title:cyan` | Title text and icon color |
-| `link` | `link:orange` | Link color inside callout |
-| `gradient` | `gradient:blue-purple` | 2-color linear gradient |
-| `neon` | `neon:#00f2ff` | Neon border + glow effect |
-| `icon` | `icon:sun` | Lucide icon name |
-| `no-icon` | `(no-icon)` | Hide the default icon |
+![Colors & Backgrounds](assets/colors_backgrounds.png)
 
-### Borders
-| Parameter | Example | Description |
-| :--- | :--- | :--- |
-| `border` | `border:red` / `border:none` | Border color |
-| `border-width` | `border-width:4` | Thickness in pixels |
-| `border-style` | `border-style:dashed` | `solid`, `dashed`, `dotted`, `double` |
-| `radius` | `radius:20` | Corner roundness in pixels |
+![Gradients](assets/gradients.png)
 
-### Typography
-| Parameter | Example | Description |
-| :--- | :--- | :--- |
-| `font` | `font:mono` | `mono`, `serif`, `sans`, `hand`, `marker` |
-| `font-size` | `font-size:4` | Scale: `1` (tiny) → `5` (huge). Default: `3` |
+![Neon Glow Effects](assets/neon_glow_effects.png)
 
-### Text Readability
-| Parameter | Example | Description |
-| :--- | :--- | :--- |
-| `text:dark-border` | `text:(white, dark-border)` | Dark stroke on content text |
-| `text:light-border` | `text:(cyan, light-border)` | Light stroke on content text |
-| `title:dark-border` | `title:(yellow, dark-border)` | Dark stroke on title |
-| `link:dark-border` | `link:(orange, dark-border)` | Dark stroke on links |
+### Visual Layout Builder
 
-### Layouts
-| Parameter | Example | Description |
-| :--- | :--- | :--- |
-| `col` | `(col:3)` | Multi-column lists |
-| `center` | `(center)` | Center title + content |
-| `title:center` | `(title:center)` | Center only the title |
-| `compact` | `(compact)` | Reduce padding (dense mode) |
-| Grid | `(1:2)` | Position in grid: `(pos:cols)` |
-| Grid Row | `(1:3:2)` | `(pos:cols:row)` for multi-row |
+Design complex dashboard grids by dragging and merging cells — no code required. Access from **Settings → Special Callouts → Visual Layout Builder**.
+
+![Visual Builder Settings](assets/visual_builder_settings.png)
+
+### Dashboard Grids
+
+Use the visual builder or inline grid syntax to create multi-panel layouts. Callouts are automatically placed into the merged areas you designed.
+
+![Ultimate Dashboard Grid](assets/ultimate_dashboard.png)
+
+### Typography and Borders
+
+![Typography & Fonts](assets/typography_fonts.png)
+
+![Border Styles](assets/border_styles.png)
+
+### Multi-Column Lists
+
+![Standard Columns](assets/standard_columns.png)
 
 ---
 
 ## Examples
 
-> Each example below shows the **exact markdown syntax** used to create it. Copy-paste into Obsidian to try!
-
-### Colors & Backgrounds
-Change background, text, and title colors using Hex codes, RGB, or named colors.
-
-![Colors & Backgrounds](assets/colors_backgrounds.png)
-
-```markdown
-> [!note] (bg:#2ecc71, text:white) 🟢 Green Background
-> Change the background color with `bg:` and text color with `text:`.
-
-> [!warning] (bg:#e67e22, text:white, title:#f1c40f) 🟠 Custom Title Color
-> The `title:` parameter changes only the callout title color.
-
-> [!danger] (bg:#e74c3c, text:white, link:cyan) 🔴 Custom Link Color
-> Check these links: [[Example Link]] and [Google](https://google.com)
-> The `link:` parameter customizes hyperlink colors.
-
-> [!tip] (bg:#3498db, text:white, no-icon) 🔵 Hidden Icon
-> The `no-icon` parameter hides the default callout icon for a cleaner look.
-```
-
----
-
 ### Gradients
-Create stunning gradients by separating two colors with a hyphen `-`.
-
-![Gradients](assets/gradients.png)
 
 ```markdown
-> [!tip] (gradient:#667eea-#764ba2, text:white) 🌈 Purple Gradient
-> Create stunning gradients by separating two colors with a hyphen `-`.
-
-> [!tip] (gradient:#FDC830-#F37335, text:white) 🌅 Sunset Gradient
-> Works perfectly for highlight cards.
+> [!tip] (gradient:#667eea-#764ba2, text:white) Purple Gradient
+> Separate two colors with a hyphen.
 ```
 
----
-
-### Typography & Fonts
-Change the font family of your callouts to match the content.
-
-![Typography & Fonts](assets/typography_fonts.png)
+### Multi-Column
 
 ```markdown
-> [!note] (font:mono, bg:#0f0e17, text:#00ff41, border:none, title:#00ff41) 💻 Monospace Font
-> Terminal-style appearance for code snippets or technical notes.
-
-> [!note] (font:hand, bg:#f39c12, text:#2c3e50, no-icon, radius:0) ✏️ Handwriting Font
-> Perfect for sticky notes or informal thoughts.
-
-> [!note] (font:serif, bg:#fdf2e9, text:#6c3483, border-width:2) 📜 Serif Font
-> Classic serif font. Great for formal documents or quotes.
+> [!note] (col:3, bg:#2c3e50, text:#ecf0f1) Skills
+> - HTML     - TypeScript
+> - CSS      - React
+> - JS       - Node.js
 ```
 
----
-
-### Font Size Scale
-Scale text from `font-size:1` (tiny) to `font-size:5` (huge).
-
-![Font Size Scale](assets/font_size_scale.png)
-
-```markdown
-> [!info] (font-size:2, bg:#2c3e50, text:#ecf0f1, compact) font-size:2 — Small
-> Small but readable. Ideal for footnotes or meta-information.
-
-> [!info] (font-size:4, bg:#2c3e50, text:#ecf0f1, compact) font-size:4 — Large
-> Large text. Perfect for subheadings or important highlights.
-```
-
----
-
-### Layout Controls
-Center alignment and compact dense modes.
-
-![Layout Controls](assets/layout_controls.png)
-
-```markdown
-> [!tip] (center, bg:#2ecc71, text:white, title:#ecf0f1) 🎯 Centered Callout
-> The `center` parameter aligns both the title and the content to the center.
-
-> [!quote] (title:center, bg:#34495e, text:#ecf0f1, title:#3498db) 💬 Centered Title Only
-> Only the title is centered, while the content remains left-aligned.
-
-> [!info] (compact, bg:#f39c12, text:white) 📦 Compact Widget
-> Reduces padding and margins. Ideal for dense dashboards and grids.
-```
-
----
-
-### Border Styles
-Customize border style, width, and radius.
-
-![Border Styles](assets/border_styles.png)
-
-```markdown
-> [!note] (border:#3498db, border-width:3, border-style:solid, radius:8) 📘 Solid Border
-> Default solid border with custom color and thickness.
-
-> [!warning] (border:#e74c3c, border-width:3, border-style:dashed, radius:15) ⚠️ Dashed Border
-> `border-style:dashed` → Creates a dashed line with rounded corners.
-
-> [!success] (border:#2ecc71, border-width:2, border-style:dotted, radius:20) ✅ Dotted Border
-> `border-style:dotted` → Creates a dotted outline.
-
-> [!tip] (border:#e67e22, border-width:4, radius:50) 💊 Pill Shape
-> `border-width:4, radius:50` → Maximum border radius for a pill-shaped container.
-```
-
----
-
-### Neon Glow Effects
-Add futuristic neon borders and glowing box-shadows.
-
-![Neon Glow Effects](assets/neon_glow_effects.png)
-
-```markdown
-> [!danger] (neon:#ff0000, bg:#1a0000, text:#ff6b6b) ⚡ Red Neon
-> Creates a glowing border and box-shadow. Looks best on dark backgrounds.
-
-> [!info] (neon:#00f2ff, bg:#0a0a1a, text:#00f2ff) 💎 Cyan Neon
-> Perfect for a Cyberpunk or futuristic aesthetic.
-
-> [!note] (neon:#ff6bcb, bg:#0f0e17, text:#f9f4da, title:#ff6bcb) 🔮 Pink Neon
-> Synthwave aesthetic. The `title:` parameter matches the neon glow.
-```
-
----
-
-### Icon Metadata
-Set any Lucide icon for a callout using the `icon:` parameter.
-
-```markdown
-> [!note] (icon:sun, bg:#f1c40f, text:#2c3e50) ☀️ Custom Icon
-> The `icon:` parameter accepts any Lucide icon name.
-
-> [!note] (icon:rocket, bg:#0f0e17, text:#a7a9be, neon:#ff6bcb) 🚀 Rocket Icon
-> Combine with other metadata for maximum effect.
-```
-
----
-
-### Standard Columns
-Automatically split list items and checkboxes into multiple columns.
-
-![Standard Columns](assets/standard_columns.png)
-
-```markdown
-> [!note] (col:2, bg:#2c3e50, text:#ecf0f1, title:#3498db) 📝 2 Column List
-> Automatically splits list items into multiple columns (flows top-to-bottom).
-> - HTML
-> - CSS
-> - JavaScript
-> - TypeScript
-> - React
-> - Node.js
-
-> [!todo] (col:3, bg:#2d3436, text:#dfe6e9, title:#00b894, compact) 📋 3 Column Tasks
-> Task lists (checkboxes) work flawlessly inside column layouts!
-> - [x] Planning
-> - [x] Design mockups
-> - [ ] Frontend build
-```
-
----
-
-### Dataview Integration
-Column layouts perfectly support asynchronous Dataview queries!
-
-![Dataview Integration](assets/dataview_integration.png)
-
-````markdown
-> [!example] (col:2, bg:#2c3e50, text:#ecf0f1, title:#9b59b6) 📊 Dataview Task Columns
-> ```dataview
-> TASK 
-> FROM "" 
-> WHERE !completed 
-> LIMIT 6
-> ```
-````
-
----
-
-## The Two Layout Engines: Inline vs Visual
-
-Special Callouts comes with **two distinct layout engines**. Depending on your needs, you can use the simple inline system for quick alignments, or the advanced visual builder for complex, asymmetric dashboards.
-
-### 1. The Inline Grid System (Basic & Quick)
-**Best for:** Simple side-by-side grids, 50/50 splits, or quick alignments.
-**How it works:** You write the layout directly in your markdown using the `(position:columns)` syntax inside a `[!multi-callout]` wrapper. No settings required.
-
-![Simple Grid](assets/simple_grid.png)
+### Grid Layout
 
 ```markdown
 > [!multi-callout]
-> > [!info] (1:2, bg:#3498db, text:white) 📊 Left Panel
-> > Format is `(position:total_columns)`.
+> > [!info] (1:2, bg:#3498db, text:white) Left Panel
+> > Content here.
 >
-> > [!tip] (2:2, bg:#2ecc71, text:white) 💡 Right Panel
-> > Must be wrapped inside a `[!multi-callout]`.
+> > [!tip] (2:2, bg:#2ecc71, text:white) Right Panel
+> > Content here.
 ```
 
----
-
-### 2. The Visual Layout Builder (Advanced & Interactive)
-**Best for:** Complex dashboards, asymmetric designs, nested columns, and merged grids.
-**How it works:** Instead of writing complex layout math in markdown, you design your grid visually in the Plugin Settings. It works just like Excel or Elementor: **drag to select cells, click "Merge"**, and visually build your layout!
-
-![Visual Builder Settings](assets/visual_builder_settings.png)
-*(Go to Settings → Special Callouts → Visual Layout Builder to try the drag-and-merge interface)*
-
-Once you save your layout with a name (e.g., `my_dashboard`), simply call it in your markdown. The system automatically places your callouts into the merged areas you designed.
-
-![Ultimate Dashboard Grid](assets/ultimate_dashboard.png)
+### Neon Glow
 
 ```markdown
-> [!multi-callout] (nested_dashboard)
->
-> > [!info] (bg:#2c3e50, text:white, center, compact) 📊 Main Chart
-> > text
->
-> > [!success] (bg:#27ae60, text:white, center, compact) 💰 Revenue
-> > text
->
-> > [!warning] (bg:#e67e22, text:white, center, compact) ⚡ Sidebar
-> > text
->
-> > [!danger] (bg:#c0392b, text:white, center, compact) 📉 Alert
-> > text
+> [!danger] (neon:#ff0000, bg:#1a0000, text:#ff6b6b) Alert
+> Glowing border and box-shadow. Best on dark backgrounds.
 ```
 
----
-
-### Mixed Grid
-Combine columns inside grids!
-
-![Mixed Grid](assets/mixed_grid.png)
-
-```markdown
-> [!multi-callout]
-> > [!todo] (1:2, col:2, bg:#1a1a2e, text:#dfe6e9, title:#00cec9, compact) 📋 Sprint Tasks
-> > - [x] Design mockups
-> > - [x] Setup repo
-> > - [ ] Build frontend
-> > - [ ] API endpoints
->
-> > [!note] (2:2, bg:#2d3436, text:#dfe6e9, title:#fdcb6e, compact) 📝 Team Notes
-> > - Sprint #5 started!
-> > - Code review is pending.
-```
+See the [Usage Guide](USAGE_GUIDE.md) for all examples and parameters.
 
 ---
 
-### The Ultimate Showcase (Full Power)
-Combine almost every parameter into a single, highly customized callout.
+## Metadata Reference
 
-![Full Power](assets/showcase.png)
+`> [!type] (param:value, param2:value2) Title`
 
-```markdown
-> [!note] (bg:#0f0e17, text:#c4b5fd, title:#e879f9, font:mono, border:#e879f9, border-width:2, neon:#e879f9, compact) 🚀 Everything Combined
-> Custom background, monospace font, pink neon glow, custom text/title colors, and compact padding. The full power of Special Callouts in one single block!
-```
+### Colors
+| Parameter | Example | Description |
+| :--- | :--- | :--- |
+| `bg` | `bg:#ff0000` | Background color |
+| `text` | `text:white` | Content text color |
+| `title` | `title:cyan` | Title and icon color |
+| `link` | `link:orange` | Link color |
+| `gradient` | `gradient:blue-purple` | Two-color gradient |
+| `neon` | `neon:#00f2ff` | Neon border + glow |
+| `icon` | `icon:sun` | Lucide icon name |
+| `no-icon` | `(no-icon)` | Hide icon |
 
----
+### Borders
+| Parameter | Example | Description |
+| :--- | :--- | :--- |
+| `border` | `border:red` | Border color |
+| `border-width` | `border-width:4` | Thickness (px) |
+| `border-style` | `border-style:dashed` | `solid`, `dashed`, `dotted`, `double` |
+| `radius` | `radius:20` | Corner roundness (px) |
 
-## Settings Panel
+### Typography
+| Parameter | Example | Description |
+| :--- | :--- | :--- |
+| `font` | `font:mono` | `mono`, `serif`, `sans`, `hand`, `marker` |
+| `font-size` | `font-size:4` | `1` (tiny) → `5` (huge) |
 
-The plugin includes a rich visual settings panel accessible from **Settings → Special Callouts**.
+### Layout
+| Parameter | Example | Description |
+| :--- | :--- | :--- |
+| `col` | `(col:3)` | Multi-column lists |
+| `center` | `(center)` | Center content |
+| `compact` | `(compact)` | Reduce padding |
+| Grid | `(1:2)` | Position in grid |
 
-| Section | Features |
-|---------|----------|
-| **Quick Actions** | "How to Use" modal, "Metadata Reference" modal |
-| **General Settings** | Default callout metadata template |
-| **Custom Callouts** | Create, edit, delete custom style presets with live preview |
-| **Quick Start Presets** | Ocean Deep, Neon Glow, Forest, Sunset — one-click templates |
-| **Random Generator** | Generate a unique random style instantly |
-| **Style Editor** | Name, icon picker, 5 color pickers, neon toggle, font dropdown, border controls, layout toggles |
-| **Visual Layout Builder** | Drag-and-merge grid designer with persist, export, and import |
-| **Import/Export** | Share styles as JSON — copy to clipboard or paste to import |
-| **Standard Callouts** | Modify default colors of built-in types (note, info, warning...) |
-| **Standard Colors** | Edit hex values of named colors (red, blue, green...) |
-| **Custom Colors** | Add your own named colors for use in any callout |
-
----
-
-## Command Palette
-
-Press `Ctrl/Cmd + P` and search for:
-
-| Command | Description |
-|---------|-------------|
-| `Insert Custom Style...` | Browse and insert any saved custom style |
-| `Wrap Selection in Callout...` | Wrap selected text in a callout with style picker |
-| `Insert Multi-Column Layout...` | Scaffold a 2/3/4 column multi-callout template |
-| `Change Icon of Callout at Cursor` | Change the Lucide icon of the callout at your cursor |
-| `Advanced Callout Builder...` | Open the full visual builder modal |
-| `Insert "[style-name]" Callout` | Directly insert a specific custom style |
-| `Show Metadata Reference` | Open the full parameter reference |
-
-> Assign **hotkeys** to your favorites in Settings → Hotkeys → Special Callouts.
+Full reference in the [Usage Guide](USAGE_GUIDE.md).
 
 ---
 
 ## Installation
 
-### From Community Plugins (Recommended)
-1. Open Obsidian Settings → **Community Plugins**
-2. Turn off **Restricted Mode**
-3. Click **Browse** and search for `Special Callouts`
-4. Click **Install** then **Enable**
+### Community Plugins (Recommended)
 
-### Manual Installation
-1. Download `main.js`, `styles.css`, and `manifest.json` from the [latest release](https://github.com/ahseyg/special-callouts/releases)
-2. Create folder: `VaultFolder/.obsidian/plugins/special-callouts/`
-3. Copy the downloaded files to the folder
-4. Enable the plugin in Obsidian Settings → Community Plugins
+1. **Settings → Community Plugins**
+2. Turn off Restricted Mode
+3. Browse → search **Special Callouts**
+4. Install → Enable
+
+Or open directly: [community.obsidian.md/plugins/special-callouts](https://community.obsidian.md/plugins/special-callouts)
+
+### Manual
+
+1. Download `main.js`, `styles.css`, `manifest.json` from the [latest release](https://github.com/ahseyg/special-callouts/releases)
+2. Create `VaultFolder/.obsidian/plugins/special-callouts/`
+3. Copy the files into the folder
+4. Enable in Settings → Community Plugins
 
 ---
 
 ## Contributing
 
-This plugin is **open source** and we welcome contributions!
+- **Bug reports:** [Open an issue](https://github.com/ahseyg/special-callouts/issues) — include Obsidian version, callout markdown, and a screenshot
+- **Feature requests:** [Open an issue](https://github.com/ahseyg/special-callouts/issues)
+- **Pull requests:** Fork → Branch → Code → PR
 
-- **Bug Reports:** [Open an issue](https://github.com/ahseyg/special-callouts/issues) — please include your Obsidian version, the callout markdown, and a screenshot
-- **Feature Requests:** Same link — we'd love to hear your ideas!
-- **Pull Requests:** Fork, branch, code, PR — all contributions are appreciated
+If you find this plugin useful, consider giving it a [star](https://github.com/ahseyg/special-callouts).
 
 ---
 
@@ -437,6 +212,10 @@ This plugin is **open source** and we welcome contributions!
 MIT — See [LICENSE](LICENSE) for details.
 
 ---
+
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=ahseyg&repo=special-callouts&theme=tokyonight" alt="Repo Stats"/>
+</p>
 
 <p align="center">
   Developed by <a href="https://github.com/ahseyg">ahseyg</a>
