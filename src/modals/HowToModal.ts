@@ -28,10 +28,13 @@ class HowToModal extends Modal {
                 text: 'Press Ctrl/Cmd+P and type:',
             });
             const ul = section.createEl('ul');
-            ul.createEl('li').createEl('strong', { text: '"Insert Custom Callout"' }).parentElement!
-                .appendText(' - Browse all your saved styles');
-            ul.createEl('li').createEl('strong', { text: '"Insert [style-name]"' }).parentElement!
-                .appendText(' - Directly insert a specific style');
+            const li1 = ul.createEl('li');
+            li1.createEl('strong', { text: '"Insert Custom Callout"' });
+            li1.appendText(' - Browse all your saved styles');
+            
+            const li2 = ul.createEl('li');
+            li2.createEl('strong', { text: '"Insert [style-name]"' });
+            li2.appendText(' - Directly insert a specific style');
         });
 
         // Section: Manual Usage
@@ -48,8 +51,8 @@ class HowToModal extends Modal {
             p1.createEl('code', { text: '(position:cols)' });
 
             const code1 = section.createEl('code');
-            code1.setCssStyles({ 'display': 'block' });
-            code1.setCssStyles({ 'marginBottom': '1rem' });
+            code1.addClass('sc-block');
+            code1.addClass('sc-mb-1');
             code1.setText('> [!multi-callout]\n> > [!info] (1:2)\n> > [!tip] (2:2)');
 
             const p2 = section.createEl('p');
@@ -77,13 +80,7 @@ class HowToModal extends Modal {
 
         // Tip banner
         const banner = contentEl.createDiv();
-        banner.setCssProps({
-            '--banner-bg': 'linear-gradient(135deg, #667eea 15%, #764ba2 85%)',
-        });
-        banner.setCssStyles({ 'background': 'linear-gradient(135deg, #667eea 15%, #764ba2 85%)' });
-        banner.setCssStyles({ 'padding': '1rem' });
-        banner.setCssStyles({ 'borderRadius': '6px' });
-        banner.setCssStyles({ 'color': 'var(--text-on-accent)' });
+        banner.addClass('sc-modal-banner');
         banner.createEl('strong', { text: '⚡ Quick Tip: ' });
         banner.appendText('Assign hotkeys to your favorite styles in Settings → Hotkeys → Special Callouts');
     }
@@ -94,19 +91,15 @@ class HowToModal extends Modal {
 
     private createSection(container: HTMLElement, title: string, fill: (el: HTMLElement) => void): void {
         const section = container.createDiv();
-        section.setCssStyles({ 'marginBottom': '1.5rem' });
+        section.addClass('sc-mb-1-5');
         const h3 = section.createEl('h3', { text: title });
-        h3.setCssStyles({ 'margin': '0 0 0.75rem 0' });
-        h3.setCssStyles({ 'color': 'var(--interactive-accent)' });
+        h3.addClass('sc-modal-h3');
         fill(section);
     }
 
     private createMethodBox(container: HTMLElement, label: string, code: string): void {
         const box = container.createDiv();
-        box.setCssStyles({ 'marginBottom': '1rem' });
-        box.setCssStyles({ 'padding': '1rem' });
-        box.setCssStyles({ 'background': 'var(--background-secondary)' });
-        box.setCssStyles({ 'borderRadius': '6px' });
+        box.addClass('sc-modal-method-box');
         box.createEl('strong', { text: label });
         box.createEl('br');
         box.createEl('code', { text: code });

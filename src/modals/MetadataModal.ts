@@ -65,6 +65,7 @@ class MetadataReferenceModal extends Modal {
             ['col:3', 'Multi-column list (inside callout)'],
             ['compact', 'Reduce padding (dense mode)'],
             ['center', 'Center title and content'],
+
             ['title:center', 'Center title only'],
             ['1:3', 'Grid: position 1 of 3 columns'],
             ['1:3:2', 'Grid: pos 1, 3 cols, row 2'],
@@ -73,33 +74,21 @@ class MetadataReferenceModal extends Modal {
         // Presets
         // Example box
         const exampleBox = contentEl.createDiv();
-        exampleBox.setCssStyles({ 'background': 'var(--background-primary-alt)' });
-        exampleBox.setCssStyles({ 'padding': '1rem' });
-        exampleBox.setCssStyles({ 'borderRadius': '8px' });
-        exampleBox.setCssStyles({ 'border': '1px solid var(--background-modifier-border)' });
-        exampleBox.setCssStyles({ 'marginBottom': '1rem' });
-        exampleBox.createEl('strong', { text: '💡 Example:' }).setCssStyles({ 'color': 'var(--text-accent)' });
+        exampleBox.addClass('sc-modal-info-box');
+        exampleBox.createEl('strong', { text: '💡 Example:' }).addClass('sc-text-accent');
         exampleBox.createEl('br');
         const exCode = exampleBox.createEl('code', {
             text: '(bg:#1a1a2e, text:(white, dark-border), neon:#00f2ff, radius:10)',
         });
-        exCode.setCssStyles({ 'display': 'block' });
-        exCode.setCssStyles({ 'marginTop': '0.5rem' });
-        exCode.setCssStyles({ 'padding': '0.5rem' });
-        exCode.setCssStyles({ 'background': 'var(--background-secondary)' });
-        exCode.setCssStyles({ 'borderRadius': '4px' });
+        exCode.addClass('sc-modal-code-block');
 
         // Pro tip box
         const tipBox = contentEl.createDiv();
-        tipBox.setCssStyles({ 'background': 'var(--background-primary-alt)' });
-        tipBox.setCssStyles({ 'padding': '1rem' });
-        tipBox.setCssStyles({ 'borderRadius': '8px' });
-        tipBox.setCssStyles({ 'border': '1px solid var(--background-modifier-border)' });
-        tipBox.createEl('strong', { text: 'Pro Tip: ' }).setCssStyles({ 'color': 'var(--text-accent)' });
+        tipBox.addClass('sc-modal-info-box');
+        tipBox.createEl('strong', { text: 'Pro Tip: ' }).addClass('sc-text-accent');
         tipBox.appendText('Use ');
         tipBox.createEl('code', { text: 'Ctrl/Cmd+P' });
         tipBox.appendText(' to open the command palette and type "Special Callouts" to see all available commands.');
-        tipBox.setCssStyles({ 'marginBottom': '1rem' });
 
         // Available Modifiers Table
         this.createTable(contentEl, '🎨 Style & Colors', [
@@ -125,34 +114,26 @@ class MetadataReferenceModal extends Modal {
 
     private createTable(container: HTMLElement, title: string, rows: [string, string][]): void {
         const section = container.createDiv();
-        section.setCssStyles({ 'marginBottom': '2rem' });
+        section.addClass('sc-modal-section');
 
         const h3 = section.createEl('h3', { text: title });
-        h3.setCssStyles({ 'margin': '0 0 1rem 0' });
-        h3.setCssStyles({ 'fontWeight': '600' });
-        h3.setCssStyles({ 'borderBottom': '2px solid var(--interactive-accent)' });
-        h3.setCssStyles({ 'paddingBottom': '0.5rem' });
+        h3.addClass('sc-modal-section-title');
 
         const table = section.createEl('table');
-        table.setCssStyles({ 'width': '100%' });
-        table.setCssStyles({ 'borderCollapse': 'collapse' });
-        table.setCssStyles({ 'fontSize': '0.9rem' });
+        table.addClass('sc-modal-table');
 
         rows.forEach(([param, desc], i) => {
             const tr = table.createEl('tr');
             const isLast = i === rows.length - 1;
 
             const td1 = tr.createEl('td');
-            td1.setCssStyles({ 'padding': '10px 0' });
-            td1.setCssStyles({ 'width': '45%' });
-            td1.setCssStyles({ 'color': 'var(--code-normal)' });
-            if (!isLast) td1.setCssStyles({ 'borderBottom': '1px solid var(--background-modifier-border)' });
+            td1.addClass('sc-modal-table-td1');
+            if (!isLast) td1.addClass('sc-modal-table-row-border');
             td1.createEl('code', { text: param });
 
             const td2 = tr.createEl('td');
-            td2.setCssStyles({ 'padding': '10px 0' });
-            td2.setCssStyles({ 'color': 'var(--text-muted)' });
-            if (!isLast) td2.setCssStyles({ 'borderBottom': '1px solid var(--background-modifier-border)' });
+            td2.addClass('sc-modal-table-td2');
+            if (!isLast) td2.addClass('sc-modal-table-row-border');
             td2.setText(desc);
         });
     }
