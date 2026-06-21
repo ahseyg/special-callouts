@@ -15,6 +15,7 @@ export class CustomCalloutSuggester extends SuggestModal<CalloutStyle> {
 
     constructor(app: App, styles: CalloutStyle[], onSelect: (style: CalloutStyle) => void) {
         super(app);
+        this.modalEl.addClass('special-callouts-ui');
         this.styles = styles;
         this.onSelect = onSelect;
         this.setPlaceholder('Select a custom callout style...');
@@ -27,31 +28,20 @@ export class CustomCalloutSuggester extends SuggestModal<CalloutStyle> {
     }
 
     renderSuggestion(style: CalloutStyle, el: HTMLElement): void {
-        el.setCssStyles({'display': 'flex',
-            'alignItems': 'center',
-            'gap': '10px',
-            'padding': '4px 0',
-        });
+        el.addClass('sc-suggester-item');
 
         const swatch = el.createDiv();
+        swatch.addClass('sc-suggester-swatch');
         swatch.setCssProps({
-            'width': '28px',
-            'height': '28px',
-            'border-radius': '6px',
-            'flex-shrink': '0',
-            'background': style.bg || 'var(--interactive-accent)',
-            'border': `2px solid ${style.border || style.bg || 'var(--background-modifier-border)'}`,
+            '--sc-swatch-bg': style.bg || 'var(--interactive-accent)',
+            '--sc-swatch-border': `2px solid ${style.border || style.bg || 'var(--background-modifier-border)'}`,
         });
 
         const info = el.createDiv();
-        info.setCssStyles({'flex': '1', 'minWidth': '0' });
+        info.addClass('sc-suggester-info');
 
         const nameEl = info.createDiv({ text: style.name });
-        nameEl.setCssProps({
-            'font-weight': '600',
-            'font-size': '0.95rem',
-            'color': 'var(--text-normal)',
-        });
+        nameEl.addClass('sc-suggester-name');
 
         const metaEl = info.createDiv();
         const parts: string[] = [];
@@ -60,13 +50,7 @@ export class CustomCalloutSuggester extends SuggestModal<CalloutStyle> {
         if (style.compact) parts.push('compact');
         if (style.noIcon) parts.push('no-icon');
         metaEl.textContent = parts.length > 0 ? parts.join(' · ') : 'Custom Style';
-        metaEl.setCssProps({
-            'font-size': '0.75rem',
-            'color': 'var(--text-muted)',
-            'white-space': 'nowrap',
-            'overflow': 'hidden',
-            'text-overflow': 'ellipsis',
-        });
+        metaEl.addClass('sc-suggester-meta');
     }
 
     onChooseSuggestion(style: CalloutStyle): void {

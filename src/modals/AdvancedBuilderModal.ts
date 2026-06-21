@@ -3,13 +3,13 @@
  * Interactive modal for building a callout with custom parameters
  */
 
-import { App, Modal, Setting, setIcon } from 'obsidian';
+import { App, Modal, Setting, setIcon, Editor } from 'obsidian';
 import SpecialCallouts from '../../main';
 import { IconPickerModal } from './IconPickerModal';
 
 export class AdvancedBuilderModal extends Modal {
     private plugin: SpecialCallouts;
-    private editor: any;
+    private editor: Editor;
     
     // Callout parameters
     private type: string = 'note';
@@ -19,7 +19,7 @@ export class AdvancedBuilderModal extends Modal {
     private isCompact: boolean = false;
     private isCenter: boolean = false;
 
-    constructor(app: App, plugin: SpecialCallouts, editor: any) {
+    constructor(app: App, plugin: SpecialCallouts, editor: Editor) {
         super(app);
         this.plugin = plugin;
         this.editor = editor;
@@ -28,6 +28,7 @@ export class AdvancedBuilderModal extends Modal {
     onOpen() {
         const { contentEl } = this;
         contentEl.empty();
+        contentEl.addClass('special-callouts-ui');
         
         contentEl.createEl('h2', { text: 'Advanced Callout Builder' });
 
@@ -52,7 +53,7 @@ export class AdvancedBuilderModal extends Modal {
             .setDesc('Choose a Lucide icon');
         
         const iconPreview = iconSetting.nameEl.createSpan();
-        iconPreview.setCssStyles({ 'marginLeft': '10px' });
+        iconPreview.addClass('sc-ml-10');
         if (this.icon) setIcon(iconPreview, this.icon);
 
         iconSetting.addButton(btn => btn
@@ -119,5 +120,6 @@ export class AdvancedBuilderModal extends Modal {
     onClose() {
         const { contentEl } = this;
         contentEl.empty();
+        contentEl.addClass('special-callouts-ui');
     }
 }

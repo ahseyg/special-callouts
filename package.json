@@ -1,6 +1,6 @@
 {
     "name": "special-callouts",
-    "version": "1.0.3-beta.1",
+    "version": "1.0.6",
     "description": "Advanced callout styling plugin for Obsidian",
     "main": "main.js",
     "type": "module",
@@ -22,8 +22,7 @@
         "@types/node": "^16.11.6",
         "esbuild": "0.25.5",
         "tslib": "2.4.0",
-        "typescript": "^5.8.3",
-        "builtin-modules": "^5.2.0"
+        "typescript": "^5.8.3"
     },
     "dependencies": {
         "obsidian": "latest"

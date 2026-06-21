@@ -122,25 +122,27 @@ export function applyTextBorder(element: HTMLElement, borderType: string): void 
     const strokeColor = borderType === 'dark-border'
         ? 'rgba(0,0,0,0.8)'
         : 'rgba(255,255,255,0.8)';
-    element.setCssStyles({ '-webkit-text-stroke': `0.5px ${strokeColor}` } as any);
-    element.setCssStyles({ 'textShadow': borderType === 'dark-border'
-        ? '0 0 2px rgba(0,0,0,0.5)'
-        : '0 0 2px rgba(255,255,255,0.5)' });
+    // Use CSS custom property + data attribute; actual rule lives in styles.css
+    element.setAttribute('data-sc-text-border', borderType);
+    element.setCssProps({ '--sc-text-border-color': strokeColor });
 }
 
 /**
- * Sets an important CSS property on an element, bypassing the obsidianmd/no-static-styles-assignment rule in a single place.
+ * Applies a CSS text string to an element by parsing it into individual
+ * property:value pairs and calling setCssStyles (Obsidian approved API).
  */
-// eslint-disable-next-line obsidianmd/no-static-styles-assignment
-export function setImportantStyle(el: HTMLElement, property: string, value: string): void {
-    el.style.setProperty(property, value, 'important');
-}
-
-/**
- * Applies css text directly to an element.
- */
-// eslint-disable-next-line obsidianmd/no-static-styles-assignment
 export function applyCssText(el: HTMLElement, cssText: string): void {
-    el.style.cssText = cssText;
+    const styleRecord: Record<string, string> = {};
+    cssText.split(';').forEach(declaration => {
+        const colonIdx = declaration.indexOf(':');
+        if (colonIdx === -1) return;
+        const prop = declaration.slice(0, colonIdx).trim();
+        const val = declaration.slice(colonIdx + 1).trim();
+        if (!prop || !val) return;
+        // Convert kebab-case to camelCase
+        const camelProp = prop.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+        styleRecord[camelProp] = val;
+    });
+    el.setCssStyles(styleRecord as Partial<CSSStyleDeclaration>);
 }
 
