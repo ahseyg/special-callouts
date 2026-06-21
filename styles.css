@@ -115,7 +115,7 @@
 }
 
 /* Balanced padding for callouts without visible title content */
-.callout .callout-content: first-child,
+.callout .callout-content:first-child,
 .callout .callout-content:only-child {
     padding-top: 0.6em;
     padding-bottom: 0.6em;
