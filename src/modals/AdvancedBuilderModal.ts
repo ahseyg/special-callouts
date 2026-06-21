@@ -28,6 +28,7 @@ export class AdvancedBuilderModal extends Modal {
     onOpen() {
         const { contentEl } = this;
         contentEl.empty();
+        contentEl.addClass('special-callouts-ui');
         
         contentEl.createEl('h2', { text: 'Advanced Callout Builder' });
 
@@ -119,5 +120,6 @@ export class AdvancedBuilderModal extends Modal {
     onClose() {
         const { contentEl } = this;
         contentEl.empty();
+        contentEl.addClass('special-callouts-ui');
     }
 }

@@ -8,7 +8,7 @@
  * @license MIT
  */
 
-import { Plugin } from 'obsidian';
+import { App, Plugin, Editor, FuzzySuggestModal } from 'obsidian';
 import { SpecialCalloutsSettings } from './src/types';
 import { DEFAULT_SETTINGS } from './src/constants';
 import { CalloutProcessor } from './src/processor';
@@ -17,6 +17,29 @@ import { showMetadataReference } from './src/modals/MetadataModal';
 import { SpecialCalloutsSettingTab } from './src/settings/SettingsTab';
 import { AdvancedBuilderModal } from './src/modals/AdvancedBuilderModal';
 import { IconPickerModal } from './src/modals/IconPickerModal';
+
+class ColumnSuggesterModal extends FuzzySuggestModal<string> {
+    items: string[];
+    callback: (item: string) => void;
+
+    constructor(app: App, items: string[], callback: (item: string) => void) {
+        super(app);
+        this.items = items;
+        this.callback = callback;
+    }
+
+    getItems(): string[] {
+        return this.items;
+    }
+
+    getItemText(item: string): string {
+        return item;
+    }
+
+    onChooseItem(item: string, evt: MouseEvent | KeyboardEvent): void {
+        this.callback(item);
+    }
+}
 
 /**
  * Main plugin class
@@ -91,10 +114,8 @@ export default class SpecialCallouts extends Plugin {
             id: 'insert-multi-column-layout',
             name: 'Insert Multi-Column Layout...',
             editorCallback: (editor) => {
-                // Sütun sayısı seçtir
                 const options = ['2 Sütun', '3 Sütun', '4 Sütun'];
-                // @ts-ignore
-                this.app.internalPlugins.getPluginById('command-palette').instance.showSuggester(options, (choice: string) => {
+                new ColumnSuggesterModal(this.app, options, (choice: string) => {
                     if (!choice) return;
                     const cols = parseInt(choice.split(' ')[0]);
                     let template = `> [!multi-callout]\n>\n`;
@@ -102,7 +123,7 @@ export default class SpecialCallouts extends Plugin {
                         template += `>> [!note] (${i}:${cols})\n>> Sütun ${i} içeriği\n>\n`;
                     }
                     editor.replaceRange(template, editor.getCursor());
-                });
+                }).open();
             }
         });
 
@@ -118,7 +139,7 @@ export default class SpecialCallouts extends Plugin {
                 const match = line.match(/^>\s*\[!([^\]|]+)(?:\|([^\]]*))?\]/);
                 if (!match) return;
 
-                const calloutType = match[1];
+                
                 const existingMeta = match[2] || '';
 
                 new IconPickerModal(this.app, (icon: string) => {
@@ -166,7 +187,7 @@ export default class SpecialCallouts extends Plugin {
     /**
      * Helper to insert a callout template with default metadata
      */
-    private insertCalloutTemplate(editor: any, type: string): void {
+    private insertCalloutTemplate(editor: Editor, type: string): void {
         const cursor = editor.getCursor();
         const defaultMeta = this.settings.defaultMetadata ? `|${this.settings.defaultMetadata}` : '';
         const calloutText = `> [!${type}${defaultMeta}]\n> `;

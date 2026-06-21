@@ -21,6 +21,7 @@ class HowToModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
+        contentEl.addClass('special-callouts-ui');
 
         // Section: Command Palette
         this.createSection(contentEl, '⌨️ Quick Insert via Command Palette', (section) => {
@@ -87,6 +88,7 @@ class HowToModal extends Modal {
 
     onClose(): void {
         this.contentEl.empty();
+        contentEl.addClass('special-callouts-ui');
     }
 
     private createSection(container: HTMLElement, title: string, fill: (el: HTMLElement) => void): void {

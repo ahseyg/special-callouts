@@ -15,6 +15,7 @@ export class CustomCalloutSuggester extends SuggestModal<CalloutStyle> {
 
     constructor(app: App, styles: CalloutStyle[], onSelect: (style: CalloutStyle) => void) {
         super(app);
+        this.modalEl.addClass('special-callouts-ui');
         this.styles = styles;
         this.onSelect = onSelect;
         this.setPlaceholder('Select a custom callout style...');

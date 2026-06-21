@@ -62,13 +62,14 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
     customColorsViewMode: 'grid' | 'list' = 'grid';
 
     constructor(app: App, plugin: PluginWithSettings) {
-        super(app, plugin as any);
+        super(app, plugin as unknown as Plugin);
         this.plugin = plugin;
     }
 
     display(): void {
         const { containerEl } = this;
         containerEl.empty();
+        containerEl.addClass('special-callouts-ui');
 
         this.createHeader(containerEl);
         this.createQuickActions(containerEl);
@@ -97,16 +98,16 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         // AI_CONTEXT: Sekonder eylem butonlari icin var(--interactive-normal) kullaniliyor
         // Accent rengi acik/beyaz oldugunda 'color: white' okunaksiz hale geliyordu
         howToBtn.addClass('sc-style-05ed7705');
-        howToBtn.onmouseover = () => howToBtn.addClass('sc-style-dfd2f110');
-        howToBtn.onmouseout = () => howToBtn.addClass('sc-style-42c960e0');
+        howToBtn.onmouseover = () => { howToBtn.removeClass('sc-style-42c960e0'); howToBtn.addClass('sc-style-dfd2f110'); };
+        howToBtn.onmouseout = () => { howToBtn.removeClass('sc-style-dfd2f110'); howToBtn.addClass('sc-style-42c960e0'); };
         setIcon(howToBtn.createSpan(), 'help-circle');
         howToBtn.createSpan({ text: 'How to Use' });
         howToBtn.onclick = () => showHowToUse(this.app);
 
         const metadataBtn = quickRefDiv.createEl('button');
         metadataBtn.addClass('sc-style-05ed7705');
-        metadataBtn.onmouseover = () => metadataBtn.addClass('sc-style-dfd2f110');
-        metadataBtn.onmouseout = () => metadataBtn.addClass('sc-style-42c960e0');
+        metadataBtn.onmouseover = () => { metadataBtn.removeClass('sc-style-42c960e0'); metadataBtn.addClass('sc-style-dfd2f110'); };
+        metadataBtn.onmouseout = () => { metadataBtn.removeClass('sc-style-dfd2f110'); metadataBtn.addClass('sc-style-42c960e0'); };
         setIcon(metadataBtn.createSpan(), 'list');
         metadataBtn.createSpan({ text: 'Metadata Reference' });
         metadataBtn.onclick = () => showMetadataReference(this.app);
@@ -284,15 +285,11 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 const id = parseInt(cell.getAttribute('data-id') || '0');
                 const isSelected = this.builderSelectedCells.some(s => this.builderGridMatrix[s.r]?.[s.c] === id);
                 if(isSelected) {
-                    cell.addClass('sc-style-5e0853c5');
-                    cell.addClass('sc-style-e7813acd');
-                    cell.addClass('sc-style-4d6aa729');
-                    cell.addClass('sc-style-1a92a345');
+                    cell.removeClasses(['sc-style-9a360b3f', 'sc-style-fdf11a02', 'sc-style-f31841c1', 'sc-style-4eebc6ad']);
+                    cell.addClasses(['sc-style-5e0853c5', 'sc-style-e7813acd', 'sc-style-4d6aa729', 'sc-style-1a92a345']);
                 } else {
-                    cell.addClass('sc-style-9a360b3f');
-                    cell.addClass('sc-style-fdf11a02');
-                    cell.addClass('sc-style-f31841c1');
-                    cell.addClass('sc-style-4eebc6ad');
+                    cell.removeClasses(['sc-style-5e0853c5', 'sc-style-e7813acd', 'sc-style-4d6aa729', 'sc-style-1a92a345']);
+                    cell.addClasses(['sc-style-9a360b3f', 'sc-style-fdf11a02', 'sc-style-f31841c1', 'sc-style-4eebc6ad']);
                 }
             });
         };
@@ -332,7 +329,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                     const subtitle = cell.createSpan({ text: `Callout ${id}` });
                     subtitle.addClass('sc-style-aad34d77');
                     
-                    cell.onmousedown = (e) => {
+                    cell.onmousedown = () => {
                         isDragging = true;
                         activeDocument.addEventListener('mouseup', onMouseUp);
                         dragStart = {r, c};
@@ -345,7 +342,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                         updateSelectionVisuals();
                     };
                     
-                    cell.onmouseenter = (e) => {
+                    cell.onmouseenter = () => {
                         if(isDragging && dragStart) {
                             const minRow = Math.min(dragStart.r, r);
                             const maxRow = Math.max(dragStart.r, maxR);
@@ -380,13 +377,13 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         exportBtn.addClass('sc-style-a0d2c240');
         setIcon(exportBtn, 'upload');
         exportBtn.createSpan({ text: 'Export All' });
-        exportBtn.onclick = async () => {
+        exportBtn.onclick = () => { void (async () => {
             const data = this.plugin.settings.customLayouts || [];
             try {
                 await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
                 new Notice('All layouts copied to clipboard!');
-            } catch (e) {}
-        };
+            } catch { new Notice('Export failed'); }
+        })(); };
 
         const importBtn = ioGroup.createEl('button');
         importBtn.addClass('sc-style-a0d2c240');
@@ -402,7 +399,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             
             const btn = modal.contentEl.createEl('button', { text: 'Import' });
             btn.addClass('sc-style-7724b6b4');
-            btn.onclick = async () => {
+            btn.onclick = () => { void (async () => {
                 try {
                     const data = JSON.parse(area.getValue());
                     if (Array.isArray(data)) {
@@ -415,13 +412,13 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 } catch(e) {
                     new Notice('Invalid JSON');
                 }
-            };
+            })(); };
             modal.open();
         };
 
         const saveBtn = saveBtnRow.createEl('button', { text: 'Save Layout' });
         saveBtn.addClass('sc-style-d345155f');
-        saveBtn.onclick = async () => {
+        saveBtn.onclick = () => { void (async () => {
             if (!this.builderLayoutName) {
                 new Notice('Please enter a layout name');
                 return;
@@ -460,7 +457,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             
             await this.plugin.saveSettings();
             this.display(); // refresh
-        };
+        })(); };
 
         // Saved Layouts List
         if (this.plugin.settings.customLayouts && this.plugin.settings.customLayouts.length > 0) {
@@ -514,11 +511,11 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 setIcon(delBtn, 'trash');
                 delBtn.addClass('sc-style-12c7087c');
                 delBtn.title = 'Delete Layout';
-                delBtn.onclick = async () => {
+                delBtn.onclick = () => { void (async () => {
                     this.plugin.settings.customLayouts.splice(idx, 1);
                     await this.plugin.saveSettings();
                     this.display();
-                };
+                })(); };
             });
         }
     }
@@ -618,12 +615,12 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 resetBtn.addClass('sc-style-7236432e');
                 setIcon(resetBtn, 'rotate-ccw');
                 resetBtn.title = 'Reset';
-                resetBtn.onclick = async (e) => {
+                resetBtn.onclick = () => { void (async () => {
                     e.stopPropagation();
                     this.plugin.settings.standardStyles[styleName] = { ...DEFAULT_STANDARD_STYLES[styleName] };
                     await this.plugin.saveSettings();
                     this.display();
-                };
+                })(); };
             }
         });
     }
@@ -800,7 +797,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         this.createPresetsSection(creatorCard);
 
         // Form inputs
-        const previewBox = this.createFormSection(creatorCard);
+        this.createFormSection(creatorCard);
 
 
 
@@ -943,15 +940,15 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             const display = wrapper.createDiv();
             display.addClasses(['sc-var-width', 'sc-var-height', 'sc-var-background', 'sc-var-pointer-events']); display.setCssProps({ '--sc-dyn-width': `100%`, '--sc-dyn-height': `100%`, '--sc-dyn-background': `${c.val()}`, '--sc-dyn-pointer-events': `none` });
 
-            picker.oninput = (e: any) => {
-                c.set(e.target.value);
-                display.addClass('sc-var-background'); display.setCssProps({ '--sc-dyn-background': e.target.value  });
-                hexInput.value = e.target.value.toUpperCase();
+            picker.oninput = (e: Event) => {
+                c.set((e.target as HTMLInputElement).value);
+                display.addClass('sc-var-background'); display.setCssProps({ '--sc-dyn-background': (e.target as HTMLInputElement).value  });
+                hexInput.value = (e.target as HTMLInputElement).value.toUpperCase();
                 this.updatePreview(previewBox);
             };
 
-            hexInput.onchange = (e: any) => {
-                let v = e.target.value;
+            hexInput.onchange = (e: Event) => {
+                let v = (e.target as HTMLInputElement).value;
                 if (!v.startsWith('#')) v = '#' + v;
                 if (isValidHex(v)) {
                     v = normalizeHex(v);
@@ -996,9 +993,9 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             this.updatePreview(previewBox);
         });
 
-        neonPicker.oninput = (e: any) => {
+        neonPicker.oninput = (e: Event) => {
             if (neonToggle.getValue()) {
-                this.tempNeon = e.target.value;
+                this.tempNeon = (e.target as HTMLInputElement).value;
                 this.updatePreview(previewBox);
             }
         };
@@ -1110,13 +1107,13 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         exportBtn.addClass('sc-style-7e45aa8b');
         setIcon(exportBtn, 'upload');
         exportBtn.createSpan({ text: 'Export' });
-        exportBtn.onclick = async () => {
+        exportBtn.onclick = () => { void (async () => {
             const styleData = this.getStyleFromForm();
             try {
                 await navigator.clipboard.writeText(JSON.stringify(styleData, null, 2));
                 new Notice('Style JSON copied to clipboard!');
-            } catch (e) {}
-        };
+            } catch { new Notice('Export failed'); }
+        })(); };
 
         const importBtn = leftGroup.createEl('button');
         importBtn.addClass('sc-style-7e45aa8b');
@@ -1140,11 +1137,11 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
 
         const saveBtn = row.createEl('button', { text: this.editingIndex !== null ? 'Update Style' : 'Create Style' });
         saveBtn.addClass('sc-style-b01285b3');
-        saveBtn.onclick = async () => {
+        saveBtn.onclick = () => { void (async () => {
             await this.saveCurrentStyle();
             this.resetForm();
             this.display();
-        };
+        })(); };
     }
 
     private OLD_createFormSection(creatorCard: HTMLElement): HTMLElement {
@@ -1333,13 +1330,13 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         const exportBtn = ioGroup.createEl('button');
         (exportBtn).addClass('sc-style-c7d21299');
         setIcon(exportBtn, 'upload'); // Changed from 'download'
-        const expLabel = exportBtn.createSpan({ text: 'Export' });
+        exportBtn.createSpan({ text: 'Export' });
         exportBtn.title = 'Copy current style to clipboard as JSON';
 
         exportBtn.onmouseover = () => { exportBtn.addClass('sc-style-f31841c1'); exportBtn.addClass('sc-style-5332d565'); };
         exportBtn.onmouseout = () => { exportBtn.addClass('sc-style-7abb3a4e'); exportBtn.addClass('sc-style-fdf11a02'); };
 
-        exportBtn.onclick = async () => {
+        exportBtn.onclick = () => { void (async () => {
             const styleData = {
                 name: this.tempName,
                 bg: this.tempBg,
@@ -1366,7 +1363,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 new Notice('Failed to copy to clipboard.');
                 console.error(err);
             }
-        };
+        })(); };
 
         // IMPORT BUTTON
         const importBtn = ioGroup.createEl('button');
@@ -1379,7 +1376,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         importBtn.onmouseout = () => { importBtn.addClass('sc-style-7abb3a4e'); importBtn.addClass('sc-style-fdf11a02'); };
 
         importBtn.onclick = () => {
-            const modal = new ImportStyleModal(this.app, this.plugin.settings, (importedStyle: any) => {
+            const modal = new ImportStyleModal(this.app, this.plugin.settings, (importedStyle: import("../types").CalloutStyle) => {
                 // Apply imported style to form
                 this.tempName = importedStyle.name || this.tempName;
                 this.tempBg = importedStyle.bg || this.tempBg;
@@ -1416,7 +1413,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         (saveBtn).addClass('sc-style-3459676a');
         saveBtn.onmouseover = () => saveBtn.addClass('sc-style-d0def548');
         saveBtn.onmouseout = () => saveBtn.addClass('sc-style-2128f674');
-        saveBtn.onclick = async () => {
+        saveBtn.onclick = () => { void (async () => {
             if (this.tempName) {
                 // Check for duplicate names
                 const existingIndex = this.plugin.settings.customStyles.findIndex(
@@ -1461,7 +1458,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 this.resetForm();
                 this.display();
             }
-        };
+        })(); };
     }
 
     private createSavedStylesList(section: HTMLElement, container: HTMLElement): void {
@@ -1547,11 +1544,11 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         const deleteBtn = actions.createEl('button');
         deleteBtn.addClass('sc-style-657651d1');
         setIcon(deleteBtn, 'trash-2');
-        deleteBtn.onclick = async () => {
+        deleteBtn.onclick = () => { void (async () => {
             this.plugin.settings.customStyles.splice(i, 1);
             await this.plugin.saveSettings();
             this.display();
-        };
+        })(); };
 
         if (this.stylesViewMode === 'grid') {
             const preview = card.createDiv();
@@ -1681,7 +1678,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
 
         const addBtn = addColorRow.createEl('button', { text: 'Add' });
         addBtn.addClass('sc-style-915f964b');
-        addBtn.onclick = async () => {
+        addBtn.onclick = () => { void (async () => {
             if (this.newCustomColorName.trim() && isValidHex(this.newCustomColorHex)) {
                 this.plugin.settings.customColors.push({
                     name: this.newCustomColorName.trim(),
@@ -1695,7 +1692,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
                 colorPicker.value = '#FFFFFF';
                 this.display();
             }
-        };
+        })(); };
 
         this.plugin.settings.customColors.forEach((c, i) => {
             const colorRow = section.createDiv();
@@ -1717,11 +1714,11 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             const deleteBtn = colorRow.createEl('button');
             deleteBtn.addClass('sc-style-98da0ee1');
             setIcon(deleteBtn, 'trash-2');
-            deleteBtn.onclick = async () => {
+            deleteBtn.onclick = () => { void (async () => {
                 this.plugin.settings.customColors.splice(i, 1);
                 await this.plugin.saveSettings();
                 this.display();
-            };
+            })(); };
         });
     }
 
@@ -1985,11 +1982,11 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
 
 /** Modal for importing style */
 class ImportStyleModal extends Modal {
-    onSubmit: (style: any) => void;
+    onSubmit: (style: import("../types").CalloutStyle) => void;
     settings: SpecialCalloutsSettings;
     jsonText: string = '';
 
-    constructor(app: App, settings: SpecialCalloutsSettings, onSubmit: (style: any) => void) {
+    constructor(app: App, settings: SpecialCalloutsSettings, onSubmit: (style: import("../types").CalloutStyle) => void) {
         super(app);
         this.settings = settings;
         this.onSubmit = onSubmit;

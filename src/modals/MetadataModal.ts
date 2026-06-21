@@ -21,6 +21,7 @@ class MetadataReferenceModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
+        contentEl.addClass('special-callouts-ui');
         contentEl.addClass('sc-metadata-modal');
 
         // Colors
@@ -110,6 +111,7 @@ class MetadataReferenceModal extends Modal {
 
     onClose(): void {
         this.contentEl.empty();
+        contentEl.addClass('special-callouts-ui');
     }
 
     private createTable(container: HTMLElement, title: string, rows: [string, string][]): void {
