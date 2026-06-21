@@ -7,8 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="USAGE_GUIDE.md">Kullanım Kılavuzu</a> · <a href="README.md">English</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Hata Bildir</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Özellik İste</a>
-</p>
+  <a href="USAGE_GUIDE.md">Kullanım Kılavuzu</a> · <a href="README.md">English</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Hata Bildir</a></p>
 
 # Special Callouts — Obsidian Eklentisi
 
