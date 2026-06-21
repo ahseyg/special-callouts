@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="USAGE_GUIDE.md">Kullanım Kılavuzu</a> · <a href="README.md">English</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Hata Bildir</a></p>
+  <a href="USAGE_GUIDE_TR.md">Kullanım Kılavuzu</a> · <a href="README.md">English</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Hata Bildir</a></p>
 
 # Special Callouts — Obsidian Eklentisi
 
@@ -130,7 +130,7 @@ Görsel oluşturucuyu veya satır içi grid söz dizimini kullanarak çok panell
 > Parlayan kenarlık ve kutu gölgesi. Koyu arka planlarda en güzel görünür.
 ```
 
-Tüm örnekler ve parametreler için [Kullanım Kılavuzu](USAGE_GUIDE.md)'na bakın.
+Tüm örnekler ve parametreler için [Kullanım Kılavuzu](USAGE_GUIDE_TR.md)'na bakın.
 
 ---
 
@@ -172,7 +172,7 @@ Tüm örnekler ve parametreler için [Kullanım Kılavuzu](USAGE_GUIDE.md)'na ba
 | `compact` | `(compact)` | Dolguyu azalt |
 | Grid | `(1:2)` | Grid pozisyonu |
 
-Tam referans için [Kullanım Kılavuzu](USAGE_GUIDE.md)'na bakın.
+Tam referans için [Kullanım Kılavuzu](USAGE_GUIDE_TR.md)'na bakın.
 
 ---
 

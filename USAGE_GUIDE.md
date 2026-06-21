@@ -60,17 +60,17 @@ Add parameters inside parentheses `( )` right after the callout type:
 ```
 
 **Available named colors:**
-| Name | Hex | Preview |
-|------|-----|---------|
-| `red` | `#e74c3c` | 🔴 |
-| `blue` | `#3498db` | 🔵 |
-| `green` | `#2ecc71` | 🟢 |
-| `yellow` | `#f1c40f` | 🟡 |
-| `orange` | `#e67e22` | 🟠 |
-| `purple` | `#9b59b6` | 🟣 |
-| `pink` | `#e84393` | 💗 |
-| `teal` | `#1abc9c` | 🩵 |
-| `grey`/`gray` | `#95a5a6` | ⚪ |
+| Name | Hex |
+|------|-----|
+| `red` | `#e74c3c` |
+| `blue` | `#3498db` |
+| `green` | `#2ecc71` |
+| `yellow` | `#f1c40f` |
+| `orange` | `#e67e22` |
+| `purple` | `#9b59b6` |
+| `pink` | `#e84393` |
+| `teal` | `#1abc9c` |
+| `grey`/`gray` | `#95a5a6` |
 
 > You can also define your own custom color names in **Settings → Colors → Custom Colors**.
 
@@ -611,3 +611,4 @@ When reporting a bug, please include:
 2. The callout markdown that causes the issue
 3. A screenshot if possible
 4. Whether the issue occurs in Edit mode, Reading mode, or both
+
