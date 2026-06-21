@@ -212,11 +212,6 @@ If you find this plugin useful, consider giving it a [star](https://github.com/a
 MIT — See [LICENSE](LICENSE) for details.
 
 ---
-
-<p align="center">
-  <img src="https://github-readme-stats.vercel.app/api/pin/?username=ahseyg&repo=special-callouts&theme=tokyonight" alt="Repo Stats"/>
-</p>
-
 <p align="center">
   Developed by <a href="https://github.com/ahseyg">ahseyg</a>
 </p>
