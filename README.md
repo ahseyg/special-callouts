@@ -7,8 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="USAGE_GUIDE.md">Usage Guide</a> · <a href="README_TR.md">Türkçe</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Report Bug</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Request Feature</a>
-</p>
+  <a href="USAGE_GUIDE.md">Usage Guide</a> · <a href="README_TR.md">Türkçe</a> · <a href="https://github.com/ahseyg/special-callouts/issues">Report Bug</a></p>
 
 # Special Callouts for Obsidian
 
