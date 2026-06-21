@@ -212,11 +212,6 @@ Eklentiyi faydalı buluyorsanız bir [yıldız](https://github.com/ahseyg/specia
 MIT — Detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
 ---
-
-<p align="center">
-  <img src="https://github-readme-stats.vercel.app/api/pin/?username=ahseyg&repo=special-callouts&theme=tokyonight" alt="Repo İstatistikleri"/>
-</p>
-
 <p align="center">
   Geliştirici: <a href="https://github.com/ahseyg">ahseyg</a>
 </p>
