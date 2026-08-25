@@ -10,7 +10,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadModule, PALETTE } from './helpers.mjs';
 
-const { parseMetadata, parseGridLayout, extractMetadata, findMetadataSpan } = await loadModule('src/parser.ts');
+const { parseMetadata, serializeMetadata, parseGridLayout, extractMetadata, findMetadataSpan } = await loadModule('src/parser.ts');
 
 /** Parses metadata content with the default palette and no custom colours. */
 const parse = (content, layouts = []) => parseMetadata(content, PALETTE, [], layouts);
@@ -443,3 +443,48 @@ describe('layout names versus built-in flags', () => {
         assert.equal(config.customLayout, 'my_dashboard');
     });
 });
+
+describe('serializeMetadata and lossless roundtripping', () => {
+    test('serializes individual parameters cleanly', () => {
+        const serialized = serializeMetadata({ bg: '#e74c3c', dense: true }, '1:3', 'ocean');
+        assert.equal(serialized, 'style:ocean, 1:3, bg:#e74c3c, dense');
+    });
+
+    test('serializes grouped text and stroke', () => {
+        const serialized = serializeMetadata({ text: 'white', textBorder: 'dark-border' });
+        assert.equal(serialized, 'text:(white, dark-border)');
+    });
+
+    test('serializes title with center, color, and stroke', () => {
+        const serialized = serializeMetadata({ titleCenter: true, titleColor: '#3498db', titleBorder: 'light-border' });
+        assert.equal(serialized, 'title:(center, #3498db, light-border)');
+    });
+
+    test('property test: parse(serialize(parse(x))) equals parse(x)', () => {
+        const sampleInputs = [
+            'bg:red, border:blue, dense, 1:3',
+            'style:ocean, text:(white, dark-border), link:teal, bw:2px, bs:dashed',
+            'title:(center, green, light-border), no-icon, radius:8px',
+            'gradient:linear-gradient(90deg, #ff0000, #0000ff), font:mono, font-size:4, col:2',
+            'neon:purple, icon:zap, icon-color:yellow, compact',
+            'center, bg:grey, border:red, bw:3px',
+            'center, title:center',
+            'title:(center, red, dark-border)'
+        ];
+
+        for (const input of sampleInputs) {
+            const firstPass = parse(input);
+            const serialized = serializeMetadata(firstPass.config, firstPass.layoutParam, firstPass.styleParam);
+            const secondPass = parse(serialized);
+
+            assert.deepEqual(
+                secondPass.config,
+                firstPass.config,
+                `Config divergence for input: "${input}" -> serialized: "${serialized}"`
+            );
+            assert.equal(secondPass.layoutParam, firstPass.layoutParam);
+            assert.equal(secondPass.styleParam, firstPass.styleParam);
+        }
+    });
+});
+

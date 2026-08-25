@@ -276,6 +276,136 @@ export function parseMetadata(
 }
 
 /**
+ * Serializes a CalloutConfig (and optional layout/style parameters) back into metadata string syntax.
+ *
+ * This is the exact mirror of parseMetadata, ensuring provably lossless round-tripping:
+ * parse(serialize(parse(x))) === parse(x).
+ *
+ * @param config - Configuration object to serialize
+ * @param layoutParam - Optional layout parameter (e.g. "1:3")
+ * @param styleParam - Optional style name (e.g. "ocean-deep")
+ * @returns Serialized metadata string (without enclosing parentheses)
+ */
+export function serializeMetadata(
+    config: Partial<CalloutConfig>,
+    layoutParam?: string | null,
+    styleParam?: string | null
+): string {
+    const tokens: string[] = [];
+
+    // 1. Preset style parameter
+    if (styleParam) {
+        tokens.push(`style:${styleParam}`);
+    }
+
+    // 2. Custom visual layout or layout token
+    if (layoutParam) {
+        tokens.push(layoutParam);
+    } else if (config.customLayout) {
+        tokens.push(config.customLayout);
+    }
+
+    // 3. Background / Gradient / Neon
+    if (config.gradient) {
+        tokens.push(`gradient:${config.gradient}`);
+    } else if (config.bg) {
+        tokens.push(`bg:${config.bg}`);
+    }
+
+    if (config.neon) {
+        tokens.push(`neon:${config.neon}`);
+    }
+
+    // 4. Text and stroke
+    if (config.text && config.textBorder) {
+        tokens.push(`text:(${config.text}, ${config.textBorder})`);
+    } else if (config.text) {
+        tokens.push(`text:${config.text}`);
+    } else if (config.textBorder) {
+        tokens.push(`text:${config.textBorder}`);
+    }
+
+    // 5. Title color, stroke, and center
+    const titleParts: string[] = [];
+    if (config.titleCenter) {
+        titleParts.push('center');
+    }
+    if (config.titleColor) {
+        titleParts.push(config.titleColor);
+    }
+    if (config.titleBorder) {
+        titleParts.push(config.titleBorder);
+    }
+
+    if (titleParts.length > 1) {
+        tokens.push(`title:(${titleParts.join(', ')})`);
+    } else if (titleParts.length === 1) {
+        tokens.push(`title:${titleParts[0]}`);
+    }
+
+    // 6. Link color and stroke
+    if (config.link && config.linkBorder) {
+        tokens.push(`link:(${config.link}, ${config.linkBorder})`);
+    } else if (config.link) {
+        tokens.push(`link:${config.link}`);
+    } else if (config.linkBorder) {
+        tokens.push(`link:${config.linkBorder}`);
+    }
+
+    // 7. Icon and icon color
+    if (config.icon) {
+        tokens.push(`icon:${config.icon}`);
+    }
+    if (config.iconColor) {
+        tokens.push(`icon-color:${config.iconColor}`);
+    }
+
+    // 8. Border properties
+    if (config.border) {
+        tokens.push(`border:${config.border}`);
+    }
+    if (config.borderWidth) {
+        tokens.push(`bw:${config.borderWidth}`);
+    }
+    if (config.borderStyle) {
+        tokens.push(`bs:${config.borderStyle}`);
+    }
+    if (config.radius) {
+        tokens.push(`radius:${config.radius}`);
+    }
+
+    // 9. Typography
+    if (config.font) {
+        tokens.push(`font:${config.font}`);
+    }
+    if (config.fontSize) {
+        tokens.push(`font-size:${config.fontSize}`);
+    }
+
+    // 10. Columns
+    if (config.col !== null && config.col !== undefined) {
+        tokens.push(`col:${config.col}`);
+    }
+
+    // 11. Standalone flags
+    if (config.dense) {
+        tokens.push('dense');
+    } else if (config.compact) {
+        tokens.push('compact');
+    }
+
+    if (config.center) {
+        tokens.push('center');
+    }
+
+    if (config.noIcon) {
+        tokens.push('no-icon');
+    }
+
+    return tokens.join(', ');
+}
+
+/**
  * Parses grid layout parameter (e.g., "1:3" or "1:3:2")
  * @param param - Layout parameter string
  * @returns Grid configuration or null
