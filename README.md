@@ -184,7 +184,8 @@ Or open directly: [community.obsidian.md/plugins/special-callouts](https://commu
 
 - **Bug reports:** [Open an issue](https://github.com/ahseyg/special-callouts/issues) — include Obsidian version, callout markdown, and a screenshot
 - **Feature requests:** [Open an issue](https://github.com/ahseyg/special-callouts/issues)
-- **Pull requests:** Fork → Branch → Code → PR
+- **Pull requests:** Read [CONTRIBUTING.md](CONTRIBUTING.md) first, then fork → branch → code → PR
+- **What's planned:** [ROADMAP.md](ROADMAP.md) — including what is deliberately *not* planned, so nobody spends a week on something I'd turn down
 
 If you find this plugin useful, consider giving it a [star](https://github.com/ahseyg/special-callouts).
 
