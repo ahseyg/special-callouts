@@ -143,7 +143,7 @@ export class CalloutProcessor {
         if (layoutParam) {
             const gridConfig = parseGridLayout(layoutParam);
             if (gridConfig && gridConfig.columns > 0) {
-                this.applyGridLayout(calloutEl, gridConfig);
+                this.applyGridLayout(calloutEl, gridConfig, config);
             }
         }
 
@@ -362,9 +362,12 @@ export class CalloutProcessor {
     /**
      * Applies grid layout to callout
      */
-    private applyGridLayout(calloutEl: HTMLElement, gridConfig: { position: number; columns: number; row: number }): void {
+    private applyGridLayout(calloutEl: HTMLElement, gridConfig: import('./types').GridConfig, config: import('./types').CalloutConfig): void {
         const gap = 10;
-        const widthCalc = `calc((100% - ${(gridConfig.columns - 1) * gap}px) / ${gridConfig.columns})`;
+        const span = Math.min(config.span ?? 1, gridConfig.columns);
+        const widthCalc = span > 1
+            ? `calc(((100% - ${(gridConfig.columns - 1) * gap}px) / ${gridConfig.columns}) * ${span} + ${(span - 1) * gap}px)`
+            : `calc((100% - ${(gridConfig.columns - 1) * gap}px) / ${gridConfig.columns})`;
 
         const wrapper = this.getDirectWrapper(calloutEl);
         this.neutralizeWrapper(wrapper);
@@ -381,6 +384,9 @@ export class CalloutProcessor {
         calloutEl.setAttribute('data-grid-pos', gridConfig.position.toString());
         calloutEl.setAttribute('data-grid-cols', gridConfig.columns.toString());
         calloutEl.setAttribute('data-grid-row', gridConfig.row.toString());
+        if (span > 1) {
+            calloutEl.setAttribute('data-grid-span', span.toString());
+        }
     }
 
     /**

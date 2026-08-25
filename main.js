@@ -111,7 +111,8 @@ var DEFAULT_CALLOUT_CONFIG = {
   center: false,
   titleCenter: false,
   icon: null,
-  iconColor: ""
+  iconColor: "",
+  span: null
 };
 var FONT_FAMILIES = {
   "mono": "var(--font-monospace)",
@@ -376,6 +377,13 @@ function parseMetadata(content, standardColors, customColors, customLayoutNames 
       case "iconcolor":
         config.iconColor = resolve(rawValue);
         break;
+      case "span": {
+        const span = parseInt(rawValue);
+        if (!isNaN(span) && span >= 1) {
+          config.span = span;
+        }
+        break;
+      }
     }
   });
   return { config, layoutParam, styleParam };
@@ -507,7 +515,7 @@ var CalloutProcessor = class {
     if (layoutParam) {
       const gridConfig = parseGridLayout(layoutParam);
       if (gridConfig && gridConfig.columns > 0) {
-        this.applyGridLayout(calloutEl, gridConfig);
+        this.applyGridLayout(calloutEl, gridConfig, config);
       }
     }
     if (config.col !== null) {
@@ -667,9 +675,11 @@ var CalloutProcessor = class {
   /**
    * Applies grid layout to callout
    */
-  applyGridLayout(calloutEl, gridConfig) {
+  applyGridLayout(calloutEl, gridConfig, config) {
+    var _a;
     const gap = 10;
-    const widthCalc = `calc((100% - ${(gridConfig.columns - 1) * gap}px) / ${gridConfig.columns})`;
+    const span = Math.min((_a = config.span) != null ? _a : 1, gridConfig.columns);
+    const widthCalc = span > 1 ? `calc(((100% - ${(gridConfig.columns - 1) * gap}px) / ${gridConfig.columns}) * ${span} + ${(span - 1) * gap}px)` : `calc((100% - ${(gridConfig.columns - 1) * gap}px) / ${gridConfig.columns})`;
     const wrapper = this.getDirectWrapper(calloutEl);
     this.neutralizeWrapper(wrapper);
     wrapper.setCssProps({ "--sc-flex-width": widthCalc });
@@ -681,6 +691,9 @@ var CalloutProcessor = class {
     calloutEl.setAttribute("data-grid-pos", gridConfig.position.toString());
     calloutEl.setAttribute("data-grid-cols", gridConfig.columns.toString());
     calloutEl.setAttribute("data-grid-row", gridConfig.row.toString());
+    if (span > 1) {
+      calloutEl.setAttribute("data-grid-span", span.toString());
+    }
   }
   /**
    * Applies visually built custom layouts from settings using grid-template-areas

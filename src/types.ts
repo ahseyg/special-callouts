@@ -79,6 +79,7 @@ export interface CalloutConfig {
     titleCenter: boolean;
     icon: string | null;
     iconColor: string;
+    span: number | null;
 }
 
 /**

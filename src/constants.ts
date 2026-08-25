@@ -133,7 +133,8 @@ export const DEFAULT_CALLOUT_CONFIG: CalloutConfig = {
     center: false,
     titleCenter: false,
     icon: null,
-    iconColor: ''
+    iconColor: '',
+    span: null
 };
 
 /**

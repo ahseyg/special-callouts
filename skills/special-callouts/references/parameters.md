@@ -368,6 +368,22 @@ Splits lists inside the callout into N columns. Covered in depth in
 
 Any positive integer parses; 2–4 is the practical range. Non-numeric values are ignored.
 
+### `span:N`
+
+Spans a grid panel across `N` columns inside a `> [!multi-callout]` container.
+
+```markdown
+> [!multi-callout]
+>
+>> [!note] (1:3, span:2) Spans 2 columns
+>> Content
+>
+>> [!note] (3:3) Regular 1 column
+>> Content
+```
+
+Clamped to the total column count (`Math.min(span, columns)`). Ignored if non-numeric or less than 1.
+
 ### Grid position `N:M` or `N:M:R`
 
 A bare token of digits separated by `:`, `,` or `/`. It must be delimited by the start of

@@ -579,6 +579,16 @@ Press `Ctrl/Cmd + P` and search for:
 > Use as many parameters as you need!
 ```
 
+### Multi-Column Grid Spanning — `span:`
+```markdown
+> [!multi-callout]
+> > [!note] (1:3, span:2, bg:#1a1a2e, text:#dfe6e9) Wide Banner (Spans 2 Columns)
+> > This card spans 2 columns in a 3-column container.
+>
+> > [!tip] (3:3, bg:#1a1a2e, text:#dfe6e9) Sidebar (1 Column)
+> > Standard 1-column card.
+```
+
 ### Dataview Dashboard Pattern
 ````markdown
 > [!multi-callout]

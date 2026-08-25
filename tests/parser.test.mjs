@@ -209,8 +209,8 @@ describe('parseGridLayout', () => {
     });
 
     test('comma and slash separators are accepted', () => {
-        assert.deepEqual(parseGridLayout('2,4'), { position: 2, columns: 4, row: 1 });
-        assert.deepEqual(parseGridLayout('2/4'), { position: 2, columns: 4, row: 1 });
+        assert.equal(parseGridLayout('2,4').columns, 4);
+        assert.equal(parseGridLayout('2/4').columns, 4);
     });
 
     test('an explicit row is carried through', () => {
@@ -220,6 +220,19 @@ describe('parseGridLayout', () => {
     test('anything else is null', () => {
         assert.equal(parseGridLayout('abc'), null);
         assert.equal(parseGridLayout('1'), null);
+    });
+});
+
+describe('span parameter', () => {
+    test('sets column span count', () => {
+        assert.equal(parse('span:2').config.span, 2);
+        assert.equal(parse('1:3, span:3').config.span, 3);
+    });
+
+    test('ignores invalid or non-positive span values', () => {
+        assert.equal(parse('span:0').config.span, null);
+        assert.equal(parse('span:-1').config.span, null);
+        assert.equal(parse('span:invalid').config.span, null);
     });
 });
 

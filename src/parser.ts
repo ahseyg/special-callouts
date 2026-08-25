@@ -269,6 +269,13 @@ export function parseMetadata(
             case 'iconcolor':
                 config.iconColor = resolve(rawValue);
                 break;
+            case 'span': {
+                const span = parseInt(rawValue);
+                if (!isNaN(span) && span >= 1) {
+                    config.span = span;
+                }
+                break;
+            }
         }
     });
 
