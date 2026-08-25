@@ -197,17 +197,39 @@ export default class SpecialCallouts extends Plugin {
      * missing one.
      */
     private registerStyleCommands(): void {
-        this.settings.customStyles.forEach((style) => {
-            const id = `insert-${style.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-            if (this.registeredStyleCommands.has(id)) return;
-            this.registeredStyleCommands.add(id);
+        this.settings.customStyles
+            .filter((style) => style.showInCommandPalette !== false)
+            .forEach((style) => {
+                const id = `insert-${style.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+                if (this.registeredStyleCommands.has(id)) return;
+                this.registeredStyleCommands.add(id);
 
-            this.addCommand({
-                id,
-                name: `Insert "${style.name}" Callout`,
-                editorCallback: (editor) => this.insertCalloutTemplate(editor, style.name)
+                this.addCommand({
+                    id,
+                    name: `Insert "${style.name}" Callout`,
+                    editorCallback: (editor) => this.insertCalloutTemplate(editor, style.name)
+                });
             });
-        });
+
+        (this.settings.customLayouts || [])
+            .filter((layout) => layout.showInCommandPalette === true)
+            .forEach((layout) => {
+                const id = `insert-layout-${layout.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+                if (this.registeredStyleCommands.has(id)) return;
+                this.registeredStyleCommands.add(id);
+
+                this.addCommand({
+                    id,
+                    name: `Insert "${layout.name}" Layout`,
+                    editorCallback: (editor) => {
+                        let template = `> [!multi-callout] (${layout.name})\n>\n`;
+                        for (let i = 1; i <= layout.cols; i++) {
+                            template += `>> [!note] Panel ${i}\n>> Content\n>\n`;
+                        }
+                        editor.replaceRange(template, editor.getCursor());
+                    }
+                });
+            });
     }
 
     /**

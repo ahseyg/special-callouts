@@ -1029,6 +1029,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     this.tempCompact = false;
     this.tempCenter = false;
     this.tempTitleCenter = false;
+    this.tempShowInCommandPalette = true;
     this.newCustomColorName = "";
     this.newCustomColorHex = "#ffffff";
     this.editingIndex = null;
@@ -1967,6 +1968,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     };
     createToggleRow("Compact Mode", this.tempCompact, (v) => this.tempCompact = v);
     createToggleRow("Hide Icon", this.tempNoIcon, (v) => this.tempNoIcon = v);
+    createToggleRow("Show in Command Palette", this.tempShowInCommandPalette, (v) => this.tempShowInCommandPalette = v);
     const actionsContainer = creatorCard.createDiv();
     actionsContainer.addClass("sc-style-aefcf1a5");
     this.renderActionButtons(actionsContainer, previewBox);
@@ -2434,6 +2436,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     this.tempCompact = false;
     this.tempCenter = false;
     this.tempTitleCenter = false;
+    this.tempShowInCommandPalette = true;
   }
   createPanelHeader(parent, text) {
     const h = parent.createDiv();
@@ -2461,7 +2464,8 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
       noIcon: this.tempNoIcon,
       compact: this.tempCompact,
       center: this.tempCenter,
-      titleCenter: this.tempTitleCenter
+      titleCenter: this.tempTitleCenter,
+      showInCommandPalette: this.tempShowInCommandPalette
     };
   }
   loadStyleToForm(s) {
@@ -2484,6 +2488,7 @@ var SpecialCalloutsSettingTab = class extends import_obsidian4.PluginSettingTab 
     this.tempCompact = s.compact || false;
     this.tempCenter = s.center || false;
     this.tempTitleCenter = s.titleCenter || false;
+    this.tempShowInCommandPalette = s.showInCommandPalette !== false;
   }
   async saveCurrentStyle() {
     if (!this.tempName.trim()) {
@@ -3064,7 +3069,7 @@ var SpecialCallouts = class extends import_obsidian6.Plugin {
    * missing one.
    */
   registerStyleCommands() {
-    this.settings.customStyles.forEach((style) => {
+    this.settings.customStyles.filter((style) => style.showInCommandPalette !== false).forEach((style) => {
       const id = `insert-${style.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
       if (this.registeredStyleCommands.has(id)) return;
       this.registeredStyleCommands.add(id);
@@ -3072,6 +3077,27 @@ var SpecialCallouts = class extends import_obsidian6.Plugin {
         id,
         name: `Insert "${style.name}" Callout`,
         editorCallback: (editor) => this.insertCalloutTemplate(editor, style.name)
+      });
+    });
+    (this.settings.customLayouts || []).filter((layout) => layout.showInCommandPalette === true).forEach((layout) => {
+      const id = `insert-layout-${layout.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+      if (this.registeredStyleCommands.has(id)) return;
+      this.registeredStyleCommands.add(id);
+      this.addCommand({
+        id,
+        name: `Insert "${layout.name}" Layout`,
+        editorCallback: (editor) => {
+          let template = `> [!multi-callout] (${layout.name})
+>
+`;
+          for (let i = 1; i <= layout.cols; i++) {
+            template += `>> [!note] Panel ${i}
+>> Content
+>
+`;
+          }
+          editor.replaceRange(template, editor.getCursor());
+        }
       });
     });
   }

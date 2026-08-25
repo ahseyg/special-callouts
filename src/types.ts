@@ -26,6 +26,7 @@ export interface CalloutStyle {
     compact?: boolean;
     center?: boolean;
     titleCenter?: boolean;
+    showInCommandPalette?: boolean;
 }
 
 /**
@@ -36,6 +37,7 @@ export interface CustomLayout {
     cols: number;
     rows: number;
     gridAreas: string; // CSS grid-template-areas format: '"area1 area2" "area1 area3"'
+    showInCommandPalette?: boolean;
 }
 
 /**

@@ -51,6 +51,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
     tempCompact = false;
     tempCenter = false;
     tempTitleCenter = false;
+    tempShowInCommandPalette = true;
     newCustomColorName = '';
     newCustomColorHex = '#ffffff';
     editingIndex: number | null = null;
@@ -1143,6 +1144,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
 
         createToggleRow('Compact Mode', this.tempCompact, (v) => this.tempCompact = v);
         createToggleRow('Hide Icon', this.tempNoIcon, (v) => this.tempNoIcon = v);
+        createToggleRow('Show in Command Palette', this.tempShowInCommandPalette, (v) => this.tempShowInCommandPalette = v);
 
 
         // --- ACTION BUTTONS ---
@@ -1674,6 +1676,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         this.tempCompact = false;
         this.tempCenter = false;
         this.tempTitleCenter = false;
+        this.tempShowInCommandPalette = true;
     }
 
     private createPanelHeader(parent: HTMLElement, text: string) {
@@ -1703,7 +1706,8 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
             noIcon: this.tempNoIcon,
             compact: this.tempCompact,
             center: this.tempCenter,
-            titleCenter: this.tempTitleCenter
+            titleCenter: this.tempTitleCenter,
+            showInCommandPalette: this.tempShowInCommandPalette
         };
     }
 
@@ -1732,6 +1736,7 @@ export class SpecialCalloutsSettingTab extends PluginSettingTab {
         // kaydedildiginde center/titleCenter sessizce dusuyordu.
         this.tempCenter = s.center || false;
         this.tempTitleCenter = s.titleCenter || false;
+        this.tempShowInCommandPalette = s.showInCommandPalette !== false;
     }
 
     private async saveCurrentStyle() {
